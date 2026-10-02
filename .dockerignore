@@ -1,0 +1,42 @@
+# Versionamento
+.git
+.gitignore
+
+# Segredos (injetados via env_file/environment no compose)
+.env
+.env.*
+
+# Ambientes e caches
+.venv
+venv
+__pycache__
+*.py[cod]
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.coverage
+htmlcov
+
+# Dados locais (montados como volume)
+data
+*.db
+*.sqlite
+*.sqlite3
+*.csv
+*.tsv
+
+# Coisas que não entram na imagem
+tests
+docs
+*.md
+!README.md
+node_modules
+Dockerfile*
+compose*.yaml
+docker-compose*.yml
+.dockerignore
+
+# Editor / SO
+.idea
+.vscode
+.DS_Store
