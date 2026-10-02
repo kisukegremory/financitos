@@ -1,0 +1,8 @@
+services:
+  financitos:
+    build: .
+    image: financitos:latest
+    env_file: .env
+    stdin_open: true
+    volumes:
+      - ./data:/app/data

@@ -73,10 +73,8 @@ pbpaste | uv run financitos parse --source nubank --invoice 2026-10
 ### Docker
 
 ```bash
-docker compose run --rm financitos parse --source picpay --invoice 2026-10 < fatura.txt
+docker compose run --rm -T financitos parse --source picpay --invoice 2026-10 < fatura.txt
 ```
-
-> Os comandos acima passam a funcionar a partir do commit do CLI.
 
 ## Convenções de desenvolvimento
 
