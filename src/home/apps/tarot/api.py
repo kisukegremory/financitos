@@ -9,12 +9,14 @@ from home.apps.tarot.llm import PhraseWriter, Reader
 from home.apps.tarot.models import (
     Card,
     Draw,
+    GenerateMode,
     Phrase,
     PhraseIn,
     PhraseUpdate,
     Reading,
     ReadingRequest,
     Suggestion,
+    Thinker,
 )
 from home.core.config import Settings, get_settings
 from home.core.deps import Conn
@@ -36,6 +38,13 @@ def get_reader(settings: Annotated[Settings, Depends(get_settings)]) -> Reader:
 class GenerateRequest(BaseModel):
     hint: str | None = None
     count: int = Field(default=3, ge=1, le=5)
+    mode: GenerateMode = GenerateMode.ORIGINAL
+    thinker: str | None = None
+
+
+class RecommendRequest(BaseModel):
+    topic: str | None = None
+    count: int = Field(default=4, ge=1, le=6)
 
 
 class BasePrompt(BaseModel):
@@ -64,7 +73,19 @@ def generate_phrases(
     saved = db.list_phrases(conn)
     favorites = [p.text for p in saved if p.favorite] or [p.text for p in saved]
     examples = random.sample(favorites, min(EXAMPLES, len(favorites)))
-    return writer.generate(db.get_base_prompt(conn), req.hint, req.count, examples).items
+    thinker = (req.thinker or "").strip() or None
+    if req.mode is GenerateMode.INSPIRED and not thinker:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "escolha um pensador")
+    base_prompt = db.get_base_prompt(conn)
+    return writer.generate(base_prompt, req.hint, req.count, examples, req.mode, thinker).items
+
+
+@router.post("/thinkers/recommend")
+def recommend_thinkers(
+    req: RecommendRequest, writer: Annotated[PhraseWriter, Depends(get_writer)]
+) -> list[Thinker]:
+    """Pensadores cujas ideias conversam com o tema, com obras para ler."""
+    return writer.recommend((req.topic or "").strip() or None, req.count).items
 
 
 @router.put("/phrases/{id}")

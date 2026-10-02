@@ -17,6 +17,10 @@ em `core.db.register`, expõe um `APIRouter` montado em `src/home/main.py` e uma
 Guarda frases que me marcaram, gera novas com a LLM (a partir de um prompt base editável, usando as
 favoritas como referência de tom; sugestões só são salvas depois de revisadas) e tira cartas do tarot
 Rider-Waite-Smith com significado normal/invertido em português (`src/home/apps/tarot/cards.json`).
+O gerador tem três modos: **Original** (tom do prompt base), **Citação real** (frases conhecidas de um
+pensador, com autor e obra; a IA pode errar atribuições, então confira) e **Inspirada em** (frases novas no
+estilo de alguém). **Sugerir pensadores** recomenda nomes e obras para um tema; clicar escolhe o pensador.
+
 Na aba **Hoje**, você escreve como está e a LLM escolhe da coleção a frase que encaixa (ou sugere uma nova),
 explica a relação e interpreta a carta sorteada no seu contexto; as leituras ficam no histórico.
 As imagens ficam em `web/public/tarot/` e podem ser rebaixadas com

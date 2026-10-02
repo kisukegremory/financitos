@@ -13,6 +13,13 @@
   let suggestions = $state([])
   let generating = $state(false)
 
+  // modos: original (tom do prompt base), quote (citações reais), inspired (no estilo de alguém)
+  let mode = $state('original')
+  let thinker = $state('')
+  let thinkers = $state([])
+  let recommending = $state(false)
+  const classics = ['Sun Tzu', 'Platão', 'Aristóteles', 'Sêneca', 'Marco Aurélio', 'Epicteto', 'Lao-Tsé', 'Confúcio', 'Buda', 'Rumi', 'Montaigne', 'Nietzsche', 'Schopenhauer', 'Kierkegaard', 'Camus', 'Miyamoto Musashi']
+
   async function load() {
     phrases = await api.phrases({ q, favorite: onlyFavorites ? true : undefined })
   }
@@ -41,7 +48,7 @@
     error = ''
     generating = true
     try {
-      suggestions = await api.generate(hint, 3)
+      suggestions = await api.generate({ hint: hint || null, count: 3, mode, thinker: thinker || null })
     } catch (e) {
       error = e.message
     } finally {
@@ -50,8 +57,26 @@
   }
 
   async function keep(s) {
-    if (await save({ text: s.text, author: s.author, origin: 'ai', prompt: hint || null }))
+    const prompt = [thinker, hint].filter(Boolean).join(' · ') || null
+    if (await save({ text: s.text, author: s.author, source: s.source, origin: 'ai', prompt }))
       suggestions = suggestions.filter((x) => x !== s)
+  }
+
+  async function recommend() {
+    error = ''
+    recommending = true
+    try {
+      thinkers = await api.recommendThinkers(hint)
+    } catch (e) {
+      error = e.message
+    } finally {
+      recommending = false
+    }
+  }
+
+  function pick(t) {
+    thinker = t.name
+    if (mode === 'original') mode = 'quote'
   }
 
   async function toggleFavorite(p) {
@@ -80,11 +105,51 @@
 
   <section>
     <h2>Gerar com IA</h2>
+    <div class="modes">
+      <label class="inline"><input type="radio" bind:group={mode} value="original" /> Original</label>
+      <label class="inline"><input type="radio" bind:group={mode} value="quote" /> Citação real</label>
+      <label class="inline"><input type="radio" bind:group={mode} value="inspired" /> Inspirada em</label>
+    </div>
+    {#if mode !== 'original'}
+      <input
+        class="thinker"
+        list="classics"
+        placeholder={mode === 'quote' ? 'Pensador (vazio = a IA escolhe)' : 'Pensador: Sun Tzu, Sêneca...'}
+        bind:value={thinker}
+      />
+      <datalist id="classics">
+        {#each classics as c (c)}<option value={c}></option>{/each}
+      </datalist>
+    {/if}
     <textarea rows="3" placeholder="Tema ou dica (opcional): recomeço, coragem, saudade..." bind:value={hint}></textarea>
-    <button disabled={generating} onclick={generate}>{generating ? 'Gerando…' : 'Gerar 3 sugestões'}</button>
+    <div class="row">
+      <button disabled={generating || (mode === 'inspired' && !thinker.trim())} onclick={generate}>
+        {generating ? 'Gerando…' : 'Gerar 3 sugestões'}
+      </button>
+      <button class="ghost" disabled={recommending} onclick={recommend}>
+        {recommending ? 'Pensando…' : '🏛 Sugerir pensadores'}
+      </button>
+    </div>
+    {#if mode === 'quote'}
+      <p class="muted small">A IA pode errar atribuições: confira a fonte antes de guardar.</p>
+    {/if}
+    {#if thinkers.length}
+      <div class="thinkers">
+        {#each thinkers as t (t.name)}
+          <button class="ghost thinker-card" class:active={thinker === t.name} onclick={() => pick(t)}>
+            <strong>{t.name}</strong> <span class="muted">{t.era}</span>
+            <span>{t.why}</span>
+            <span class="muted small">📚 {t.works.join(' · ')}</span>
+          </button>
+        {/each}
+      </div>
+    {/if}
     {#each suggestions as s (s.text)}
       <div class="suggestion">
         <blockquote>{s.text}</blockquote>
+        {#if s.author || s.source}
+          <p class="muted small">— {s.author ?? ""}{s.author && s.source ? ", " : ""}{#if s.source}<i>{s.source}</i>{/if}</p>
+        {/if}
         <div class="row">
           <button onclick={() => keep(s)}>Guardar</button>
           <button class="ghost" onclick={() => (suggestions = suggestions.filter((x) => x !== s))}>Descartar</button>
@@ -107,7 +172,7 @@
       <blockquote>{p.text}</blockquote>
       <div class="row spread meta">
         <span class="muted">
-          {p.author ? `— ${p.author}` : ''}
+          {p.author ? `— ${p.author}` : ''}{p.source ? `, ${p.source}` : ''}
           {#if p.origin === 'ai'}<span class="tag">✨ IA{p.prompt ? `: ${p.prompt}` : ''}</span>{/if}
         </span>
         <span class="row">
@@ -136,4 +201,13 @@
   .icon { padding: 0.2rem 0.45rem; }
   label.inline { flex-direction: row; align-items: center; }
   .error { color: var(--danger); }
+  .modes { display: flex; gap: 1rem; margin: 0.5rem 0; }
+  .thinker { width: 100%; box-sizing: border-box; }
+  .small { font-size: 0.8rem; margin: 0.4rem 0 0; }
+  .thinkers { display: grid; gap: 0.5rem; margin-top: 0.75rem; }
+  .thinker-card {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem;
+    text-align: left; padding: 0.6rem 0.75rem;
+  }
+  .thinker-card.active { border-color: var(--accent); }
 </style>

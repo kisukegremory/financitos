@@ -40,8 +40,13 @@ diretas, poéticas sem serem piegas, que fazem a pessoa parar e pensar. \
 Escreva em português do Brasil. Evite clichês de autoajuda."""
 
 
+# Colunas adicionadas depois da criação da tabela: (nome, definição)
+PHRASE_MIGRATIONS = [("source", "TEXT")]
+
+
 def init(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA)
+    core_db.add_columns(conn, "tarot_phrases", PHRASE_MIGRATIONS)
 
 
 core_db.register(init)
@@ -56,8 +61,8 @@ def list_phrases(
 ) -> list[Phrase]:
     clauses, params = [], []
     if q:
-        clauses.append("(text LIKE ? OR author LIKE ?)")
-        params += [f"%{q}%"] * 2
+        clauses.append("(text LIKE ? OR author LIKE ? OR source LIKE ?)")
+        params += [f"%{q}%"] * 3
     if favorite is not None:
         clauses.append("favorite = ?")
         params.append(int(favorite))
@@ -74,9 +79,17 @@ def get_phrase(conn: sqlite3.Connection, id: int) -> Phrase | None:
 def create_phrase(conn: sqlite3.Connection, p: PhraseIn) -> Phrase:
     with conn:
         cur = conn.execute(
-            "INSERT INTO tarot_phrases (text, author, origin, prompt, favorite, note)"
-            " VALUES (?, ?, ?, ?, ?, ?)",
-            (p.text.strip(), p.author or None, p.origin.value, p.prompt, int(p.favorite), p.note),
+            "INSERT INTO tarot_phrases (text, author, source, origin, prompt, favorite, note)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                p.text.strip(),
+                p.author or None,
+                p.source or None,
+                p.origin.value,
+                p.prompt,
+                int(p.favorite),
+                p.note,
+            ),
         )
     return get_phrase(conn, cur.lastrowid)  # type: ignore[arg-type, return-value]
 
@@ -85,7 +98,7 @@ def update_phrase(conn: sqlite3.Connection, id: int, changes: PhraseUpdate) -> P
     patch = changes.model_dump(exclude_unset=True)
     if "favorite" in patch:
         patch["favorite"] = int(bool(patch["favorite"]))
-    for key in ("author", "note"):  # "" apaga
+    for key in ("author", "source", "note"):  # "" apaga
         if key in patch and not patch[key]:
             patch[key] = None
     if patch.get("text") is None:

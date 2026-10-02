@@ -1,25 +1,61 @@
 from openai import OpenAI
 
-from home.apps.tarot.models import Draw, Phrase, ReadingChoice, Suggestions
+from home.apps.tarot.models import (
+    Draw,
+    GenerateMode,
+    Phrase,
+    ReadingChoice,
+    Suggestions,
+    Thinkers,
+)
 from home.core.config import Settings
 from home.core.llm import LLM
 
-FORMAT = """Gere {count} frases inéditas (não cite frases famosas existentes).
-Responda APENAS com JSON no formato: {{"items": [{{"text": "..."}}]}}"""
+FORMAT = """Responda APENAS com JSON no formato:
+{{"items": [{{"text": "...", "author": "..." ou null, "source": "..." ou null}}]}}"""
+
+MODES = {
+    GenerateMode.ORIGINAL: """Gere {count} frases inéditas (não cite frases famosas existentes).
+Use author e source null.""",
+    GenerateMode.QUOTE: """Traga {count} citações REAIS e conhecidas de {thinker}, traduzidas para \
+o português do Brasil. Em author, o nome do autor; em source, a obra de onde vem a citação.
+Nunca invente citações nem atribua a {thinker} algo que não seja dele: se não tiver certeza, \
+traga menos itens. Se nenhum pensador foi indicado, escolha pensadores clássicos que conversem \
+com o tema (ex.: Sun Tzu, Platão, Sêneca, Marco Aurélio, Lao-Tsé, Nietzsche).""",
+    GenerateMode.INSPIRED: """Gere {count} frases inéditas inspiradas no pensamento e no estilo de \
+{thinker}, aplicando as ideias dele ao tema, como se fossem ensinamentos dele para hoje.
+Não copie frases reais. Use author "inspirado em <nome>" e source null.""",
+}
 
 
 def build_messages(
-    base_prompt: str, hint: str | None, count: int, examples: list[str]
+    base_prompt: str,
+    hint: str | None,
+    count: int,
+    examples: list[str],
+    mode: GenerateMode = GenerateMode.ORIGINAL,
+    thinker: str | None = None,
 ) -> list[dict[str, str]]:
     user = []
-    if examples:
+    if examples and mode is GenerateMode.ORIGINAL:
         user.append("Frases que me marcaram (para captar o tom, não para copiar):")
         user += [f"- {e}" for e in examples]
     user.append(f"Tema ou dica: {hint}" if hint else "Tema livre.")
+    instructions = MODES[mode].format(count=count, thinker=thinker or "um pensador clássico")
+    # o prompt base pede frases inéditas: em citações ele briga com o pedido de frases reais
+    system = instructions if mode is GenerateMode.QUOTE else f"{base_prompt}\n\n{instructions}"
     return [
-        {"role": "system", "content": f"{base_prompt}\n\n{FORMAT.format(count=count)}"},
+        {"role": "system", "content": f"{system}\n{FORMAT}"},
         {"role": "user", "content": "\n".join(user)},
     ]
+
+
+THINKERS_PROMPT = """Você conhece bem filosofia, estratégia e literatura clássica do Ocidente e do \
+Oriente. A partir do tema ou momento da pessoa, recomende {count} pensadores (de épocas e \
+tradições variadas) cujas ideias conversam com ele. Para cada um: name, era (lugar e época), \
+why (1 a 2 frases, em português do Brasil, ligando as ideias dele ao tema) e works (1 a 3 obras \
+reais para ler). Responda APENAS com JSON no formato:
+{{"items": [{{"name": "...", "era": "...", "why": "...", "works": ["..."]}}]}}"""
 
 
 class PhraseWriter:
@@ -27,10 +63,29 @@ class PhraseWriter:
         self.llm = LLM(settings, client)
 
     def generate(
-        self, base_prompt: str, hint: str | None, count: int, examples: list[str]
+        self,
+        base_prompt: str,
+        hint: str | None,
+        count: int,
+        examples: list[str],
+        mode: GenerateMode = GenerateMode.ORIGINAL,
+        thinker: str | None = None,
     ) -> Suggestions:
-        messages = build_messages(base_prompt, hint, count, examples)
-        return self.llm.complete_json(messages, Suggestions, temperature=0.9)
+        messages = build_messages(base_prompt, hint, count, examples, mode, thinker)
+        # citações reais pedem precisão, não criatividade
+        temperature = 0.3 if mode is GenerateMode.QUOTE else 0.9
+        result = self.llm.complete_json(messages, Suggestions, temperature=temperature)
+        items = result.items
+        if mode is GenerateMode.QUOTE:  # citação sem autor não é citação
+            items = [i for i in items if i.author]
+        return Suggestions(items=items[:count])
+
+    def recommend(self, topic: str | None, count: int) -> Thinkers:
+        messages = [
+            {"role": "system", "content": THINKERS_PROMPT.format(count=count)},
+            {"role": "user", "content": f"Tema: {topic}" if topic else "Tema livre: surpreenda."},
+        ]
+        return self.llm.complete_json(messages, Thinkers, temperature=0.7)
 
 
 READING_PROMPT = """Você é um leitor sensível e direto, que ajuda a pessoa a refletir sobre o momento dela.

@@ -49,7 +49,7 @@ def test_phrase_crud(client):
 def test_generate_does_not_save(client):
     client.post(f"{BASE}/phrases", json={"text": "Tudo passa.", "favorite": True})
     resp = client.post(f"{BASE}/phrases/generate", json={"hint": "recomeço"}).json()
-    assert resp == [{"text": "O que pesa também ensina.", "author": None}]
+    assert resp == [{"text": "O que pesa também ensina.", "author": None, "source": None}]
     assert len(client.get(f"{BASE}/phrases").json()) == 1
 
 
@@ -107,3 +107,45 @@ def test_reading_without_any_phrase_is_an_error(client):
     use_reader({"phrase_id": 999, "why": "w", "card_reading": "c"})
     assert client.post(f"{BASE}/readings", json={"feeling": "x"}).status_code == 502
     assert client.get(f"{BASE}/readings").json() == []
+
+
+def use_writer(*payloads: dict):
+    settings = app.dependency_overrides[get_settings]()
+    app.dependency_overrides[get_writer] = lambda: PhraseWriter(
+        settings, client=fake_client(*(json.dumps(p) for p in payloads))
+    )
+
+
+def test_generate_quote_keeps_author_and_source(client):
+    quote = {"text": "Conhece teu inimigo.", "author": "Sun Tzu", "source": "A Arte da Guerra"}
+    use_writer({"items": [{"text": "inventada"}, quote]})
+    body = {"mode": "quote", "thinker": "Sun Tzu", "hint": "estratégia", "count": 1}
+    (s,) = client.post(f"{BASE}/phrases/generate", json=body).json()
+    assert s == quote
+
+    saved = client.post(f"{BASE}/phrases", json={**s, "origin": "ai"}).json()
+    assert saved["source"] == "A Arte da Guerra"
+    assert len(client.get(f"{BASE}/phrases", params={"q": "Arte da"}).json()) == 1
+
+
+def test_generate_inspired_requires_thinker(client):
+    resp = client.post(f"{BASE}/phrases/generate", json={"mode": "inspired", "thinker": " "})
+    assert resp.status_code == 422
+
+
+def test_recommend_thinkers(client):
+    thinker = {"name": "Sêneca", "era": "Roma, séc. I", "why": "w", "works": ["Cartas a Lucílio"]}
+    use_writer({"items": [thinker]})
+    assert client.post(f"{BASE}/thinkers/recommend", json={"topic": "ansiedade"}).json() == [
+        thinker
+    ]
+
+
+def test_mode_prompts():
+    from home.apps.tarot.llm import build_messages
+    from home.apps.tarot.models import GenerateMode
+
+    msgs = build_messages("base", "tema", 2, ["ex"], GenerateMode.QUOTE, "Platão")
+    assert "REAIS" in msgs[0]["content"] and "Platão" in msgs[0]["content"]
+    assert "ex" not in msgs[1]["content"]  # exemplos de tom só no modo original
+    assert "base" not in msgs[0]["content"]  # prompt base (frases inéditas) fica de fora
