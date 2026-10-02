@@ -1,6 +1,6 @@
 <script>
   import { api } from './api.js'
-  import { dateBR, money, toTSV } from './format.js'
+  import { dateBR, money, parseMoney, toTSV } from './format.js'
   import TransactionTable from './TransactionTable.svelte'
 
   let { categories, invoice = $bindable() } = $props()
@@ -61,6 +61,18 @@
     if (pct >= 70) return 'high'
     return 'ok'
   }
+
+  // --- simulador de compra (só no navegador, não grava nada) ---
+  let simAmount = $state('')
+  let simCategory = $state('')
+
+  const simulation = $derived.by(() => {
+    const amount = parseMoney(simAmount)
+    const balance = balances[simCategory]
+    if (!simCategory || amount === null || !balance?.updated_at) return null
+    const open = Number(summary?.categories.find((c) => c.category === simCategory)?.remaining ?? 0)
+    return { amount: Number(amount), open, balance: Number(balance.amount) }
+  })
 
   async function payRemaining() {
     // sem filtro de fonte, paga cada cartão que tem lançamentos nessa fatura
@@ -153,6 +165,31 @@
     {/if}
   </section>
 {/if}
+
+<section class="simulator">
+  <strong>Simular compra</strong>
+  <div class="row">
+    <label>Valor <input inputmode="decimal" placeholder="0,00" bind:value={simAmount} /></label>
+    <label>
+      Caixinha
+      <select bind:value={simCategory}>
+        <option value="" disabled>escolha</option>
+        {#each categories as c}<option>{c}</option>{/each}
+      </select>
+    </label>
+  </div>
+  {#if simulation}
+    {@const { amount, open, balance } = simulation}
+    <div class="sim-result">
+      <span class="muted">
+        Saldo {money(balance)} − em aberto nesta fatura {money(open)} − compra {money(amount)}
+      </span>
+      {@render usage(open + amount, balance)}
+    </div>
+  {:else if simCategory && !balances[simCategory]?.updated_at}
+    <p class="muted">Informe o saldo de {simCategory} na aba Caixinhas para simular.</p>
+  {/if}
+</section>
 
 {#if payments.length}
   <details class="payments">
