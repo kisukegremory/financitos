@@ -104,7 +104,6 @@ details.payments {
 }
 details.payments summary { cursor: pointer; font-weight: 600; margin-bottom: 0.5rem; }
 
-.negative-balance { color: var(--danger) !important; }
 .card.balance { cursor: text; }
 .money-input { display: flex; align-items: center; gap: 0.35rem; font-weight: 600; }
 .money-input input {
@@ -115,3 +114,11 @@ details.payments summary { cursor: pointer; font-weight: 600; margin-bottom: 0.5
   font-variant-numeric: tabular-nums;
   padding: 0.25rem 0.4rem;
 }
+
+.usage { width: 100%; display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.15rem; }
+.usage .bar { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.usage .bar span { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+.usage.high .bar span { background: #e5b53c; }
+.usage.high small { color: #e5b53c; }
+.usage.over .bar span { background: var(--danger); }
+.usage.over small { color: var(--danger); }

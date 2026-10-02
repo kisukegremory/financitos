@@ -49,6 +49,19 @@
     load()
   }
 
+  // soma só dos saldos já informados; null se nenhum foi informado ainda
+  const totalBalance = $derived.by(() => {
+    const informed = Object.values(balances).filter((b) => b.updated_at)
+    return informed.length ? informed.reduce((s, b) => s + Number(b.amount), 0) : null
+  })
+
+  // % do saldo da caixinha que o valor em aberto da fatura consome
+  function usageLevel(pct) {
+    if (pct > 100) return 'over'
+    if (pct >= 70) return 'high'
+    return 'ok'
+  }
+
   async function payRemaining() {
     // sem filtro de fonte, paga cada cartão que tem lançamentos nessa fatura
     const sources = source
@@ -71,6 +84,17 @@
     message = 'Copiado para a área de transferência'
   }
 </script>
+
+{#snippet usage(open, balance)}
+  {@const pct = balance > 0 ? (open / balance) * 100 : Infinity}
+  {@const level = usageLevel(pct)}
+  <div class="usage {level}" title="Em aberto na fatura ÷ saldo atual da caixinha">
+    <div class="bar"><span style:width="{Math.min(pct, 100)}%"></span></div>
+    <small>
+      {Number.isFinite(pct) ? `${pct.toFixed(0)}% do saldo` : 'sem saldo'} · sobra {money(balance - open)}
+    </small>
+  </div>
+{/snippet}
 
 <section>
   <div class="row">
@@ -103,10 +127,7 @@
           </small>
         {/if}
         {#if balances[c.category]?.updated_at && Number(c.remaining) > 0}
-          {@const after = Number(balances[c.category].amount) - Number(c.remaining)}
-          <small class:negative-balance={after < 0} title="Saldo atual menos o que falta pagar">
-            saldo após pagar {money(after)}
-          </small>
+          {@render usage(Number(c.remaining), Number(balances[c.category].amount))}
         {/if}
       </button>
     {/each}
@@ -114,6 +135,9 @@
       <span class="muted">Total</span>
       <strong>{money(summary.total)}</strong>
       <small>pago {money(summary.paid)}</small>
+      {#if Number(summary.remaining) > 0 && totalBalance !== null}
+        {@render usage(Number(summary.remaining), totalBalance)}
+      {/if}
     </div>
   </section>
 
