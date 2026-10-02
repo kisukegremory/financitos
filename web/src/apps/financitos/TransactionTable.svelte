@@ -1,5 +1,5 @@
 <script>
-  import { dateBR, money } from './format.js'
+  import { dateBR, money } from '../../lib/format.js'
 
   /** @type {{ items: any[], categories: string[], onchange?: (item: any, category: string) => void, onnote?: (item: any, note: string) => void, onremove?: (item: any) => void }} */
   let { items, categories, onchange, onnote, onremove } = $props()

@@ -1,9 +1,9 @@
-# Acesso: http://financitos.localhost  (UI + API em /api, docs em /docs)
-# Dev da UI com hot reload: http://dev.financitos.localhost  (docker compose --profile dev up)
+# Acesso: http://home.localhost  (seletor de apps; /financitos, API em /api/<app>, docs em /docs)
+# Dev da UI com hot reload: http://dev.home.localhost  (docker compose --profile dev up)
 
 x-app: &app
   build: .
-  image: financitos:latest
+  image: home:latest
   env_file: .env
   volumes:
     - ./data:/app/data
@@ -31,9 +31,15 @@ services:
     restart: unless-stopped
     labels:
       - traefik.enable=true
-      - traefik.http.routers.financitos.rule=Host(`${APP_HOST:-financitos.localhost}`)
-      - traefik.http.routers.financitos.entrypoints=web
-      - traefik.http.services.financitos.loadbalancer.server.port=8000
+      - traefik.http.routers.home.rule=Host(`${APP_HOST:-home.localhost}`)
+      - traefik.http.routers.home.entrypoints=web
+      - traefik.http.services.home.loadbalancer.server.port=8000
+      # endereço antigo: financitos.localhost/x -> home.localhost/financitos/x
+      - traefik.http.routers.financitos-legacy.rule=Host(`financitos.localhost`)
+      - traefik.http.routers.financitos-legacy.entrypoints=web
+      - traefik.http.routers.financitos-legacy.middlewares=financitos-legacy
+      - traefik.http.middlewares.financitos-legacy.redirectregex.regex=^http://financitos\.localhost/(.*)
+      - traefik.http.middlewares.financitos-legacy.redirectregex.replacement=http://${APP_HOST:-home.localhost}/financitos/$${1}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
       interval: 30s
@@ -42,7 +48,7 @@ services:
       timeout: 3s
       retries: 3
 
-  # CLI sob demanda: docker compose run --rm -T cli parse -s PicPay -i 2026-10 < data/fatura.txt
+  # CLI sob demanda: docker compose run --rm -T cli financitos parse -s PicPay -i 2026-10 < data/fatura.txt
   cli:
     <<: *app
     profiles: ["cli"]
@@ -63,6 +69,6 @@ services:
       - api
     labels:
       - traefik.enable=true
-      - traefik.http.routers.financitos-dev.rule=Host(`dev.${APP_HOST:-financitos.localhost}`)
-      - traefik.http.routers.financitos-dev.entrypoints=web
-      - traefik.http.services.financitos-dev.loadbalancer.server.port=5173
+      - traefik.http.routers.home-dev.rule=Host(`dev.${APP_HOST:-home.localhost}`)
+      - traefik.http.routers.home-dev.entrypoints=web
+      - traefik.http.services.home-dev.loadbalancer.server.port=5173

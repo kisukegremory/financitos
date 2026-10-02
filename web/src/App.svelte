@@ -1,37 +1,18 @@
 <script>
-  import { api } from './lib/api.js'
-  import { currentMonth } from './lib/format.js'
-  import BalancesView from './lib/BalancesView.svelte'
-  import ImportView from './lib/ImportView.svelte'
-  import InvoiceView from './lib/InvoiceView.svelte'
+  import Financitos from './apps/financitos/Financitos.svelte'
+  import Home from './home/Home.svelte'
+  import { route } from './lib/router.svelte.js'
 
-  let tab = $state('invoice')
-  let invoice = $state(currentMonth())
-  let categories = $state([])
+  // primeiro segmento do path decide o app: /financitos/... -> financitos
+  const pages = { financitos: Financitos }
+  const titles = { financitos: '💸 financitos' }
 
-  api.categories().then((c) => (categories = c))
+  let app = $derived(route.path.split('/')[1])
+  let Page = $derived(pages[app] ?? Home)
 
-  function onsaved(savedInvoice) {
-    invoice = savedInvoice
-    tab = 'invoice'
-  }
+  $effect(() => {
+    document.title = titles[app] ?? '⌂ home'
+  })
 </script>
 
-<header>
-  <h1>💸 financitos</h1>
-  <nav>
-    <button class:active={tab === 'invoice'} onclick={() => (tab = 'invoice')}>Fatura</button>
-    <button class:active={tab === 'import'} onclick={() => (tab = 'import')}>Importar</button>
-    <button class:active={tab === 'balances'} onclick={() => (tab = 'balances')}>Caixinhas</button>
-  </nav>
-</header>
-
-<main>
-  {#if tab === 'import'}
-    <ImportView {categories} {onsaved} />
-  {:else if tab === 'balances'}
-    <BalancesView />
-  {:else}
-    <InvoiceView {categories} bind:invoice />
-  {/if}
-</main>
+<Page />

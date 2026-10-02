@@ -1,6 +1,6 @@
-const TOKEN_KEY = 'financitos:token'
+const TOKEN_KEY = 'home:token'
 
-async function request(method, path, body) {
+export async function request(method, path, body) {
   const headers = { 'Content-Type': 'application/json' }
   const token = localStorage.getItem(TOKEN_KEY)
   if (token) headers.Authorization = `Bearer ${token}`
@@ -24,24 +24,6 @@ async function request(method, path, body) {
   return res.status === 204 ? null : res.json()
 }
 
-export const api = {
-  categories: () => request('GET', '/categories'),
-  parse: (text, source, invoice) => request('POST', '/parse', { text, source, invoice }),
-  saveBulk: (items) => request('POST', '/transactions/bulk', items),
-  list: (params) => request('GET', `/transactions?${new URLSearchParams(clean(params))}`),
-  update: (id, changes) => request('PUT', `/transactions/${id}`, changes),
-  remove: (id) => request('DELETE', `/transactions/${id}`),
-  pay: (invoice, source, paid_at) =>
-    request('POST', `/invoices/${invoice}/pay`, { source, paid_at: paid_at || null }),
-  payments: (params) => request('GET', `/payments?${new URLSearchParams(clean(params))}`),
-  removePayment: (id) => request('DELETE', `/payments/${id}`),
-  balances: () => request('GET', '/balances'),
-  setBalance: (category, amount) =>
-    request('PUT', `/balances/${encodeURIComponent(category)}`, { amount }),
-  summary: (invoice, source) =>
-    request('GET', `/invoices/${invoice}/summary?${new URLSearchParams(clean({ source }))}`),
-}
-
-function clean(obj) {
-  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v))
+export function query(params) {
+  return new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([, v]) => v)))
 }

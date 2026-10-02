@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
-    allowedHosts: ['.localhost'], // acessado via Traefik (dev.financitos.localhost)
+    allowedHosts: ['.localhost'], // acessado via Traefik (dev.home.localhost)
     proxy: {
       // no compose, a API é o serviço "api"; fora dele, ajuste API_TARGET
       '/api': process.env.API_TARGET ?? 'http://api:8000',

@@ -1,4 +1,17 @@
-# financitos
+# home
+
+Monolito modular dos meus apps pessoais: um backend FastAPI, um front Svelte, um SQLite e um compose.
+A home (`/`) é um seletor de projetos e cada app vive no seu path:
+
+| App | UI | API | Código |
+|---|---|---|---|
+| 💸 financitos | `/financitos` | `/api/financitos` | `src/home/apps/financitos`, `web/src/apps/financitos` |
+
+O que é compartilhado fica em `src/home/core` (config, conexão SQLite, cliente LLM com fallback, token)
+e `web/src/lib` (cliente HTTP, roteador, formatação). Cada app registra suas tabelas (com prefixo, ex.: `fin_`)
+em `core.db.register`, expõe um `APIRouter` montado em `src/home/main.py` e uma página em `web/src/App.svelte`.
+
+## financitos
 
 Ferramenta pessoal para transformar a fatura do cartão em linhas prontas para a planilha, já **categorizadas nas minhas caixinhas do PicPay**, usando uma LLM via [OpenRouter](https://openrouter.ai).
 
@@ -65,7 +78,7 @@ cp .env.example .env   # e preencha OPENROUTER_API_KEY
 docker compose up -d --build
 ```
 
-Abra **http://financitos.localhost** (UI). A API fica em `/api` e a documentação interativa em `/docs`.
+Abra **http://home.localhost/financitos** (UI). A API fica em `/api/financitos` e a documentação interativa em `/docs`.
 Telas: **Fatura** (devido/pago/falta por caixinha, pagar o que falta, saldo após pagar, editar caixinha e comentário, copiar TSV),
 **Importar** (prompt para o assistente do banco → colar fatura → categorizar → revisar → salvar) e
 **Caixinhas** (saldo atual de cada uma).
@@ -82,15 +95,15 @@ docker compose down          # parar
 
 ```bash
 uv sync
-uv run financitos parse -s PicPay -i 2026-10 data/fatura.txt          # só mostra (TSV)
-uv run financitos parse -s PicPay -i 2026-10 data/fatura.txt --save   # mostra e salva
-uv run financitos list -i 2026-10 [-s PicPay] [-c Mercado]
-uv run financitos summary -i 2026-10                                  # devido × pago × falta por caixinha
-uv run financitos pay -s PicPay -i 2026-10 [-d 2026-10-02]             # paga o que falta (vale antecipado)
-uv run financitos balances [--set Mercado 1.500,00]                    # saldo das caixinhas
+uv run home financitos parse -s PicPay -i 2026-10 data/fatura.txt          # só mostra (TSV)
+uv run home financitos parse -s PicPay -i 2026-10 data/fatura.txt --save   # mostra e salva
+uv run home financitos list -i 2026-10 [-s PicPay] [-c Mercado]
+uv run home financitos summary -i 2026-10                                  # devido × pago × falta por caixinha
+uv run home financitos pay -s PicPay -i 2026-10 [-d 2026-10-02]             # paga o que falta (vale antecipado)
+uv run home financitos balances [--set Mercado 1.500,00]                    # saldo das caixinhas
 ```
 
-Também funciona via Docker: `docker compose run --rm -T cli parse -s PicPay -i 2026-10 --save < data/fatura.txt`.
+Também funciona via Docker: `docker compose run --rm -T cli financitos parse -s PicPay -i 2026-10 --save < data/fatura.txt`.
 
 > Guarde as faturas em `data/` ou `inbox/`; as duas pastas (e `*.txt`) são ignoradas pelo git.
 
@@ -100,32 +113,34 @@ Também funciona via Docker: `docker compose run --rm -T cli parse -s PicPay -i 
 docker compose --profile dev up -d
 ```
 
-Abra **http://dev.financitos.localhost**: a UI recarrega a cada alteração em `web/` e usa a mesma API.
+Abra **http://dev.home.localhost**: a UI recarrega a cada alteração em `web/` e usa a mesma API.
 
 ### Rotas da API
 
 | Método | Rota | O quê |
 |---|---|---|
 | GET | `/api/health` | Status (sem token) |
-| GET | `/api/categories` | Lista de caixinhas |
-| POST | `/api/parse` | `{text, source, invoice, save}` → lançamentos categorizados |
-| GET | `/api/transactions?invoice=&source=&category=` | Lista |
-| POST | `/api/transactions` | Cria manualmente |
-| POST | `/api/transactions/bulk` | Salva vários (ignora duplicatas) |
-| GET/PUT/DELETE | `/api/transactions/{id}` | Lê / edita (mudar caixinha marca `manual`) / remove |
-| GET | `/api/invoices/{AAAA-MM}/summary` | Devido × pago × falta por caixinha |
-| POST | `/api/invoices/{AAAA-MM}/pay` | `{source, paid_at}` → paga o que falta em cada caixinha |
-| GET/POST | `/api/payments` | Lista / registra um pagamento avulso (caixinha + valor) |
-| DELETE | `/api/payments/{id}` | Desfaz um pagamento |
-| GET | `/api/balances` | Saldo atual de cada caixinha |
-| PUT | `/api/balances/{caixinha}` | `{amount}` → atualiza o saldo |
+| GET | `/api/financitos/categories` | Lista de caixinhas |
+| POST | `/api/financitos/parse` | `{text, source, invoice, save}` → lançamentos categorizados |
+| GET | `/api/financitos/transactions?invoice=&source=&category=` | Lista |
+| POST | `/api/financitos/transactions` | Cria manualmente |
+| POST | `/api/financitos/transactions/bulk` | Salva vários (ignora duplicatas) |
+| GET/PUT/DELETE | `/api/financitos/transactions/{id}` | Lê / edita (mudar caixinha marca `manual`) / remove |
+| GET | `/api/financitos/invoices/{AAAA-MM}/summary` | Devido × pago × falta por caixinha |
+| POST | `/api/financitos/invoices/{AAAA-MM}/pay` | `{source, paid_at}` → paga o que falta em cada caixinha |
+| GET/POST | `/api/financitos/payments` | Lista / registra um pagamento avulso (caixinha + valor) |
+| DELETE | `/api/financitos/payments/{id}` | Desfaz um pagamento |
+| GET | `/api/financitos/balances` | Saldo atual de cada caixinha |
+| PUT | `/api/financitos/balances/{caixinha}` | `{amount}` → atualiza o saldo |
 
 Se `API_TOKEN` estiver definido no `.env`, todas as rotas (exceto `/api/health`) exigem `Authorization: Bearer <token>`.
 Datas trafegam em ISO (`2026-09-15`), valores como string decimal (`"42.90"`).
 
+O endereço antigo `financitos.localhost` redireciona para `home.localhost/financitos`.
+
 ### Na VPS (futuro)
 
-Defina `APP_HOST` no `.env` com o nome que você usa na VPN/Tailscale (ex.: `financitos.minha-tailnet.ts.net`)
+Defina `APP_HOST` no `.env` com o nome que você usa na VPN/Tailscale (ex.: `home.minha-tailnet.ts.net`)
 e ajuste a porta publicada do Traefik para a interface privada. TLS pode ser ligado no próprio Traefik.
 
 ## Convenções de desenvolvimento

@@ -4,9 +4,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
-from pathlib import Path
 
-from financitos.models import (
+from home.apps.financitos.models import (
     Balance,
     Category,
     CategoryBalance,
@@ -17,9 +16,10 @@ from financitos.models import (
     Transaction,
     TransactionUpdate,
 )
+from home.core import db as core_db
 
 SCHEMA = """
-CREATE TABLE IF NOT EXISTS transactions (
+CREATE TABLE IF NOT EXISTS fin_transactions (
     id              INTEGER PRIMARY KEY,
     date            TEXT    NOT NULL,  -- ISO 8601 (AAAA-MM-DD)
     amount_cents    INTEGER NOT NULL,
@@ -34,10 +34,10 @@ CREATE TABLE IF NOT EXISTS transactions (
     note            TEXT,
     UNIQUE (date, amount_cents, description, source, invoice, seq)
 );
-CREATE INDEX IF NOT EXISTS ix_transactions_invoice ON transactions (invoice, source);
+CREATE INDEX IF NOT EXISTS ix_fin_transactions_invoice ON fin_transactions (invoice, source);
 
 -- Valores puxados de cada caixinha para pagar a fatura (inclusive antecipado)
-CREATE TABLE IF NOT EXISTS payments (
+CREATE TABLE IF NOT EXISTS fin_payments (
     id           INTEGER PRIMARY KEY,
     invoice      TEXT    NOT NULL,  -- ISO 8601, 1º dia do mês
     source       TEXT    NOT NULL,
@@ -47,10 +47,10 @@ CREATE TABLE IF NOT EXISTS payments (
     note         TEXT,
     created_at   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
-CREATE INDEX IF NOT EXISTS ix_payments_invoice ON payments (invoice, source);
+CREATE INDEX IF NOT EXISTS ix_fin_payments_invoice ON fin_payments (invoice, source);
 
 -- Saldo atual de cada caixinha (informado manualmente)
-CREATE TABLE IF NOT EXISTS balances (
+CREATE TABLE IF NOT EXISTS fin_balances (
     category     TEXT    PRIMARY KEY,
     amount_cents INTEGER NOT NULL DEFAULT 0,
     updated_at   TEXT  -- NULL = nunca informado
@@ -59,6 +59,9 @@ CREATE TABLE IF NOT EXISTS balances (
 
 # Colunas adicionadas depois da criação da tabela: (nome, definição)
 MIGRATIONS = [("note", "TEXT")]
+
+# Nomes antes do monolito (tabelas sem prefixo)
+LEGACY_TABLES = {t: f"fin_{t}" for t in ("transactions", "payments", "balances")}
 
 KEY_COLUMNS = ("date", "amount_cents", "description", "source", "invoice")
 
@@ -69,38 +72,30 @@ class SaveResult:
     skipped: int
 
 
-def path_from_url(url: str) -> Path:
-    prefix = "sqlite:///"
-    if not url.startswith(prefix):
-        raise ValueError(f"DATABASE_URL não suportada: {url}")
-    return Path(url.removeprefix(prefix))
+def init(conn: sqlite3.Connection) -> None:
+    core_db.rename_tables(conn, LEGACY_TABLES)
+    conn.executescript(
+        "DROP INDEX IF EXISTS ix_transactions_invoice; DROP INDEX IF EXISTS ix_payments_invoice;"
+    )
+    conn.executescript(SCHEMA)
+    core_db.add_columns(conn, "fin_transactions", MIGRATIONS)
+    _seed_balances(conn)
+
+
+core_db.register(init)
 
 
 def connect(url: str) -> sqlite3.Connection:
-    path = path_from_url(url)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(path, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    conn.executescript(SCHEMA)
-    _migrate(conn)
-    _seed_balances(conn)
-    return conn
+    return core_db.connect(url)
 
 
 def _seed_balances(conn: sqlite3.Connection) -> None:
     """Garante uma linha (zerada) por caixinha, inclusive caixinhas novas no enum."""
     with conn:
         conn.executemany(
-            "INSERT OR IGNORE INTO balances (category) VALUES (?)", [(c.value,) for c in Category]
+            "INSERT OR IGNORE INTO fin_balances (category) VALUES (?)",
+            [(c.value,) for c in Category],
         )
-
-
-def _migrate(conn: sqlite3.Connection) -> None:
-    existing = {r["name"] for r in conn.execute("PRAGMA table_info(transactions)")}
-    with conn:
-        for name, definition in MIGRATIONS:
-            if name not in existing:
-                conn.execute(f"ALTER TABLE transactions ADD COLUMN {name} {definition}")
 
 
 def _cents(amount: Decimal) -> int:
@@ -126,7 +121,7 @@ def save(conn: sqlite3.Connection, transactions: Iterable[Transaction]) -> SaveR
             seq = seen[key]
             seen[key] += 1
             cur = conn.execute(
-                "INSERT OR IGNORE INTO transactions"
+                "INSERT OR IGNORE INTO fin_transactions"
                 " (date, amount_cents, description, source, invoice, seq, category,"
                 " category_source, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (*key, seq, t.category.value, t.category_source, t.note),
@@ -141,7 +136,7 @@ def save(conn: sqlite3.Connection, transactions: Iterable[Transaction]) -> SaveR
 def _next_seq(conn: sqlite3.Connection, key: tuple, exclude_id: int | None = None) -> int:
     where = " AND ".join(f"{c} = ?" for c in KEY_COLUMNS)
     row = conn.execute(
-        f"SELECT COALESCE(MAX(seq) + 1, 0) FROM transactions WHERE {where} AND id IS NOT ?",
+        f"SELECT COALESCE(MAX(seq) + 1, 0) FROM fin_transactions WHERE {where} AND id IS NOT ?",
         (*key, exclude_id),
     ).fetchone()
     return row[0]
@@ -152,7 +147,7 @@ def create(conn: sqlite3.Connection, t: Transaction) -> StoredTransaction:
     key = _key(t)
     with conn:
         cur = conn.execute(
-            "INSERT INTO transactions"
+            "INSERT INTO fin_transactions"
             " (date, amount_cents, description, source, invoice, seq, category,"
             " category_source, note) VALUES (?, ?, ?, ?, ?, ?, ?, 'manual', ?)",
             (*key, _next_seq(conn, key), t.category.value, t.note),
@@ -161,7 +156,7 @@ def create(conn: sqlite3.Connection, t: Transaction) -> StoredTransaction:
 
 
 def get(conn: sqlite3.Connection, id: int) -> StoredTransaction | None:
-    row = conn.execute("SELECT * FROM transactions WHERE id = ?", (id,)).fetchone()
+    row = conn.execute("SELECT * FROM fin_transactions WHERE id = ?", (id,)).fetchone()
     return _to_transaction(row) if row else None
 
 
@@ -183,7 +178,7 @@ def update(
     category_source = "manual" if "category" in patch else current.category_source
     with conn:
         conn.execute(
-            "UPDATE transactions SET date = ?, amount_cents = ?, description = ?, source = ?,"
+            "UPDATE fin_transactions SET date = ?, amount_cents = ?, description = ?, source = ?,"
             " invoice = ?, seq = ?, category = ?, category_source = ?, note = ?,"
             " updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = ?",
             (
@@ -200,7 +195,7 @@ def update(
 
 def delete(conn: sqlite3.Connection, id: int) -> bool:
     with conn:
-        return conn.execute("DELETE FROM transactions WHERE id = ?", (id,)).rowcount > 0
+        return conn.execute("DELETE FROM fin_transactions WHERE id = ?", (id,)).rowcount > 0
 
 
 def _to_transaction(row: sqlite3.Row) -> StoredTransaction:
@@ -240,7 +235,7 @@ def list_transactions(
 ) -> list[StoredTransaction]:
     where, params = _filters(invoice, source, category)
     rows = conn.execute(
-        f"SELECT * FROM transactions{where} ORDER BY date DESC, id", params
+        f"SELECT * FROM fin_transactions{where} ORDER BY date DESC, id", params
     ).fetchall()
     return [_to_transaction(r) for r in rows]
 
@@ -252,7 +247,7 @@ def summary(conn: sqlite3.Connection, invoice: date, source: str | None = None) 
     owed = {
         r["category"]: r["cents"]
         for r in conn.execute(
-            f"SELECT category, SUM(amount_cents) AS cents FROM transactions{where}"
+            f"SELECT category, SUM(amount_cents) AS cents FROM fin_transactions{where}"
             " GROUP BY category",
             params,
         )
@@ -260,7 +255,7 @@ def summary(conn: sqlite3.Connection, invoice: date, source: str | None = None) 
     paid = {
         r["category"]: r["cents"]
         for r in conn.execute(
-            f"SELECT category, SUM(amount_cents) AS cents FROM payments{where} GROUP BY category",
+            f"SELECT category, SUM(amount_cents) AS cents FROM fin_payments{where} GROUP BY category",
             params,
         )
     }
@@ -301,7 +296,7 @@ def _to_payment(row: sqlite3.Row) -> Payment:
 def add_payment(conn: sqlite3.Connection, p: PaymentIn) -> Payment:
     with conn:
         cur = conn.execute(
-            "INSERT INTO payments (invoice, source, category, amount_cents, paid_at, note)"
+            "INSERT INTO fin_payments (invoice, source, category, amount_cents, paid_at, note)"
             " VALUES (?, ?, ?, ?, ?, ?)",
             (
                 p.invoice.isoformat(),
@@ -312,7 +307,7 @@ def add_payment(conn: sqlite3.Connection, p: PaymentIn) -> Payment:
                 p.note,
             ),
         )
-    row = conn.execute("SELECT * FROM payments WHERE id = ?", (cur.lastrowid,)).fetchone()
+    row = conn.execute("SELECT * FROM fin_payments WHERE id = ?", (cur.lastrowid,)).fetchone()
     return _to_payment(row)
 
 
@@ -340,13 +335,13 @@ def list_payments(
     conn: sqlite3.Connection, invoice: date | None = None, source: str | None = None
 ) -> list[Payment]:
     where, params = _filters(invoice, source, None)
-    rows = conn.execute(f"SELECT * FROM payments{where} ORDER BY paid_at DESC, id", params)
+    rows = conn.execute(f"SELECT * FROM fin_payments{where} ORDER BY paid_at DESC, id", params)
     return [_to_payment(r) for r in rows]
 
 
 def delete_payment(conn: sqlite3.Connection, id: int) -> bool:
     with conn:
-        return conn.execute("DELETE FROM payments WHERE id = ?", (id,)).rowcount > 0
+        return conn.execute("DELETE FROM fin_payments WHERE id = ?", (id,)).rowcount > 0
 
 
 # --- saldos das caixinhas ---
@@ -354,7 +349,7 @@ def delete_payment(conn: sqlite3.Connection, id: int) -> bool:
 
 def list_balances(conn: sqlite3.Connection) -> list[Balance]:
     order = {c.value: i for i, c in enumerate(Category)}
-    rows = conn.execute("SELECT * FROM balances").fetchall()
+    rows = conn.execute("SELECT * FROM fin_balances").fetchall()
     return sorted(
         (
             Balance(
@@ -372,7 +367,7 @@ def list_balances(conn: sqlite3.Connection) -> list[Balance]:
 def set_balance(conn: sqlite3.Connection, category: Category, amount: Decimal) -> Balance:
     with conn:
         conn.execute(
-            "INSERT INTO balances (category, amount_cents, updated_at)"
+            "INSERT INTO fin_balances (category, amount_cents, updated_at)"
             " VALUES (?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))"
             " ON CONFLICT (category) DO UPDATE SET amount_cents = excluded.amount_cents,"
             " updated_at = excluded.updated_at",

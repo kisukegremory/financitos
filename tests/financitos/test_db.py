@@ -3,8 +3,8 @@ from decimal import Decimal
 
 import pytest
 
-from financitos import db
-from financitos.models import Category, Transaction, TransactionUpdate
+from home.apps.financitos import db
+from home.apps.financitos.models import Category, Transaction, TransactionUpdate
 
 INVOICE = date(2026, 10, 1)
 
@@ -107,7 +107,24 @@ def test_migrates_old_database_without_note(tmp_path):
     old.executescript(db.SCHEMA.replace("    note            TEXT,\n", ""))
     old.close()
     c = db.connect(f"sqlite:///{path}")
-    assert "note" in {r["name"] for r in c.execute("PRAGMA table_info(transactions)")}
+    assert "note" in {r["name"] for r in c.execute("PRAGMA table_info(fin_transactions)")}
+    c.close()
+
+
+def test_renames_legacy_tables_and_file(tmp_path):
+    import sqlite3
+
+    old = sqlite3.connect(tmp_path / "financitos.db")
+    old.executescript(db.SCHEMA.replace("fin_", ""))
+    old.execute(
+        "INSERT INTO transactions (date, amount_cents, category, description, source, invoice)"
+        " VALUES ('2026-09-15', 4290, 'Mercado', 'SONDA', 'PicPay', '2026-10-01')"
+    )
+    old.commit()
+    old.close()
+    c = db.connect(f"sqlite:///{tmp_path}/home.db")
+    assert [t.description for t in db.list_transactions(c)] == ["SONDA"]
+    assert not (tmp_path / "financitos.db").exists()
     c.close()
 
 

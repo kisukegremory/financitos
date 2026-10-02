@@ -1,7 +1,7 @@
 [project]
-name = "financitos"
+name = "home"
 version = "0.1.0"
-description = "Categoriza lançamentos de fatura nas caixinhas do PicPay via LLM"
+description = "Monolito modular de apps pessoais (financitos, tarot...)"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.scripts]
-financitos = "financitos.cli:app"
+home = "home.cli:app"
 
 [dependency-groups]
 dev = ["httpx>=0.27", "pytest>=8", "ruff>=0.6"]

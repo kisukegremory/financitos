@@ -32,4 +32,4 @@ COPY --from=web --chown=app:app /web/dist /app/web/dist
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1 WEB_DIST=/app/web/dist
 RUN mkdir -p /app/data && chown app:app /app/data
 USER app
-ENTRYPOINT ["financitos"]
+ENTRYPOINT ["home"]

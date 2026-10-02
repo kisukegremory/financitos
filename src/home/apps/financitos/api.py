@@ -1,21 +1,13 @@
-import os
-import secrets
-import sqlite3
-from collections.abc import Iterator
 from datetime import date
 from decimal import Decimal
-from pathlib import Path as FsPath
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Query, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from fastapi.staticfiles import StaticFiles
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from pydantic import BaseModel, Field
 
-from financitos import db
-from financitos.config import Settings, get_settings
-from financitos.llm import Categorizer
-from financitos.models import (
+from home.apps.financitos import db
+from home.apps.financitos.llm import Categorizer
+from home.apps.financitos.models import (
     Balance,
     BalanceIn,
     Category,
@@ -27,40 +19,19 @@ from financitos.models import (
     TransactionUpdate,
     parse_invoice,
 )
+from home.core.config import Settings, get_settings
+from home.core.deps import Conn
 
 INVOICE_PATTERN = r"^\d{4}-\d{2}$"
-
-bearer = HTTPBearer(auto_error=False)
-
-
-def require_token(
-    settings: Annotated[Settings, Depends(get_settings)],
-    creds: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
-) -> None:
-    expected = settings.api_token
-    if expected is None:
-        return  # sem token configurado: acesso aberto (uso local / rede privada)
-    if creds is None or not secrets.compare_digest(creds.credentials, expected.get_secret_value()):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "token inválido")
-
-
-def get_conn(settings: Annotated[Settings, Depends(get_settings)]) -> Iterator[sqlite3.Connection]:
-    conn = db.connect(settings.database_url)
-    try:
-        yield conn
-    finally:
-        conn.close()
 
 
 def get_categorizer(settings: Annotated[Settings, Depends(get_settings)]) -> Categorizer:
     return Categorizer(settings)
 
 
-Conn = Annotated[sqlite3.Connection, Depends(get_conn)]
 InvoiceParam = Annotated[str, Field(pattern=INVOICE_PATTERN, examples=["2026-10"])]
 
-app = FastAPI(title="financitos", version="0.1.0")
-router = APIRouter(prefix="/api", dependencies=[Depends(require_token)])
+router = APIRouter(tags=["financitos"])
 
 
 class ParseRequest(BaseModel):
@@ -89,11 +60,6 @@ class PayRequest(BaseModel):
 
 def _not_found(id: int) -> HTTPException:
     return HTTPException(status.HTTP_404_NOT_FOUND, f"lançamento {id} não encontrado")
-
-
-@app.get("/api/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
 
 
 @router.get("/categories")
@@ -204,16 +170,3 @@ def list_balances(conn: Conn) -> list[Balance]:
 @router.put("/balances/{category}")
 def set_balance(category: Category, body: BalanceIn, conn: Conn) -> Balance:
     return db.set_balance(conn, category, body.amount)
-
-
-app.include_router(router)
-
-
-def mount_web(directory: FsPath) -> None:
-    """Serve a UI compilada (web/dist) na raiz, se existir."""
-    if directory.is_dir():
-        app.mount("/", StaticFiles(directory=directory, html=True), name="web")
-
-
-# lido direto do ambiente para não exigir OPENROUTER_API_KEY só para importar o app
-mount_web(FsPath(os.environ.get("WEB_DIST", "web/dist")))

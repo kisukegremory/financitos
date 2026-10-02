@@ -6,10 +6,10 @@ from types import SimpleNamespace
 import pytest
 from pydantic import SecretStr, ValidationError
 
-from financitos.config import Settings
-from financitos.llm import Categorizer
-from financitos.models import Category, ParsedItem, Transaction
-from financitos.output import render
+from home.apps.financitos.llm import Categorizer
+from home.apps.financitos.models import Category, ParsedItem, Transaction
+from home.apps.financitos.output import render
+from home.core.config import Settings
 
 
 def fake_client(*payloads: str):

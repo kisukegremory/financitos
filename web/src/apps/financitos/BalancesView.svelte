@@ -1,6 +1,6 @@
 <script>
   import { api } from './api.js'
-  import { dateBR, money, moneyInput, parseMoney } from './format.js'
+  import { dateBR, money, moneyInput, parseMoney } from '../../lib/format.js'
 
   let balances = $state([])
   let message = $state('')

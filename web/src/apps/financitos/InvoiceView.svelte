@@ -1,6 +1,6 @@
 <script>
   import { api } from './api.js'
-  import { dateBR, money, parseMoney, toTSV } from './format.js'
+  import { dateBR, money, parseMoney, toTSV } from '../../lib/format.js'
   import TransactionTable from './TransactionTable.svelte'
 
   let { categories, invoice = $bindable() } = $props()

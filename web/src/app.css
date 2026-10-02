@@ -126,3 +126,4 @@ details.payments summary { cursor: pointer; font-weight: 600; margin-bottom: 0.5
 section.simulator { display: flex; flex-direction: column; gap: 0.75rem; }
 .sim-result { display: flex; flex-direction: column; gap: 0.4rem; max-width: 420px; }
 .sim-result .usage small { font-size: 0.9rem; }
+.home-link { color: var(--muted); text-decoration: none; margin-right: 0.25rem; }

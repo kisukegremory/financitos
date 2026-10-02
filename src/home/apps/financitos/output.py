@@ -3,7 +3,7 @@ import io
 from collections.abc import Iterable
 from decimal import Decimal
 
-from financitos.models import Transaction
+from home.apps.financitos.models import Transaction
 
 HEADER = ["Data", "Gasto", "Caixinha", "Descrição", "Fonte", "Fatura"]
 

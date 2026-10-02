@@ -1,4 +1,3 @@
-import logging
 import sys
 from contextlib import closing
 from datetime import date, datetime
@@ -9,11 +8,11 @@ from typing import Annotated
 
 import typer
 
-from financitos import db, models
-from financitos.config import get_settings
-from financitos.llm import Categorizer
-from financitos.models import Category, Transaction
-from financitos.output import format_amount, render
+from home.apps.financitos import db, models
+from home.apps.financitos.llm import Categorizer
+from home.apps.financitos.models import Category, Transaction
+from home.apps.financitos.output import format_amount, render
+from home.core.config import get_settings
 
 app = typer.Typer(no_args_is_help=True, help="Categoriza faturas nas caixinhas do PicPay.")
 
@@ -21,13 +20,6 @@ app = typer.Typer(no_args_is_help=True, help="Categoriza faturas nas caixinhas d
 class OutputFormat(StrEnum):
     TSV = "tsv"
     CSV = "csv"
-
-
-@app.callback()
-def main() -> None:
-    logging.basicConfig(level=get_settings().log_level, stream=sys.stderr)
-    for noisy in ("httpx", "httpx2"):
-        logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
 def parse_invoice(value: str) -> date:
@@ -163,21 +155,3 @@ def parse_amount(raw: str) -> Decimal:
 def print_total(transactions: list[Transaction]) -> None:
     total = sum((t.amount for t in transactions), start=Decimal(0))
     typer.echo(f"\n{len(transactions)} lançamentos · total R$ {format_amount(total)}", err=True)
-
-
-@app.command()
-def serve(
-    host: Annotated[str | None, typer.Option(help="Padrão: API_HOST")] = None,
-    port: Annotated[int | None, typer.Option(help="Padrão: API_PORT")] = None,
-    reload: Annotated[bool, typer.Option(help="Recarrega ao editar o código (dev)")] = False,
-) -> None:
-    """Sobe a API HTTP."""
-    import uvicorn
-
-    settings = get_settings()
-    uvicorn.run(
-        "financitos.api:app",
-        host=host or settings.api_host,
-        port=port or settings.api_port,
-        reload=reload,
-    )

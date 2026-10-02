@@ -1,6 +1,6 @@
 <script>
   import { api } from './api.js'
-  import { currentMonth, money, toTSV } from './format.js'
+  import { currentMonth, money, toTSV } from '../../lib/format.js'
   import { bankPrompt } from './prompts.js'
   import TransactionTable from './TransactionTable.svelte'
 
