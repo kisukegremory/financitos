@@ -67,3 +67,9 @@ def test_bulk_save_skips_duplicates(client):
     items = [{**ITEM, "source": "PicPay", "invoice": "2026-10"}] * 2
     assert client.post("/api/transactions/bulk", json=items).json() == {"inserted": 2, "skipped": 0}
     assert client.post("/api/transactions/bulk", json=items).json() == {"inserted": 0, "skipped": 2}
+
+
+def test_bulk_keeps_manual_category_source(client):
+    item = {**ITEM, "source": "PicPay", "invoice": "2026-10", "category_source": "manual"}
+    client.post("/api/transactions/bulk", json=[item])
+    assert client.get("/api/transactions").json()[0]["category_source"] == "manual"

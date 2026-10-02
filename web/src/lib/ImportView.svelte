@@ -1,6 +1,7 @@
 <script>
   import { api } from './api.js'
   import { currentMonth, money, toTSV } from './format.js'
+  import { bankPrompt } from './prompts.js'
   import TransactionTable from './TransactionTable.svelte'
 
   let { categories, onsaved } = $props()
@@ -34,11 +35,28 @@
     onsaved?.(invoice)
   }
 
+  const prompt = $derived(bankPrompt(invoice.split('-').reverse().join('/')))
+
+  async function copyPrompt() {
+    await navigator.clipboard.writeText(prompt)
+    message = 'Prompt copiado: cole no assistente do banco e traga a resposta para cá'
+  }
+
   async function copy() {
     await navigator.clipboard.writeText(toTSV(items))
     message = 'Copiado para a área de transferência'
   }
 </script>
+
+<details class="prompt">
+  <summary>Prompt para o assistente do banco (PicPay AI)</summary>
+  <p class="muted">
+    Copie, cole no chat do app do banco, e traga a resposta para a caixa abaixo. A última linha
+    (TOTAL) ajuda a conferir se nada ficou de fora.
+  </p>
+  <pre>{prompt}</pre>
+  <button class="ghost" onclick={copyPrompt}>Copiar prompt</button>
+</details>
 
 <section>
   <div class="row">
@@ -67,7 +85,10 @@
     <TransactionTable
       {items}
       {categories}
-      onchange={(item, c) => (item.category = c)}
+      onchange={(item, c) => {
+        item.category = c
+        item.category_source = 'manual'
+      }}
       onremove={(item) => (items = items.filter((t) => t !== item))}
     />
   </section>

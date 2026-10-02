@@ -2,6 +2,7 @@ import datetime as dt
 from datetime import date
 from decimal import Decimal
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -42,9 +43,13 @@ def parse_invoice(value: str) -> date:
     return date.fromisoformat(value[:7] + "-01")
 
 
+CategorySource = Literal["llm", "manual"]
+
+
 class Transaction(ParsedItem):
     source: str
     invoice: date  # first day of the invoice month
+    category_source: CategorySource = "llm"  # 'manual' quando eu corrijo a caixinha
 
     @field_validator("invoice", mode="before")
     @classmethod
@@ -58,7 +63,6 @@ class Transaction(ParsedItem):
 
 class StoredTransaction(Transaction):
     id: int
-    category_source: str  # 'llm' | 'manual'
 
 
 class TransactionUpdate(BaseModel):

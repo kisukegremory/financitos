@@ -63,9 +63,7 @@ def _key(t: Transaction) -> tuple:
     return (t.date.isoformat(), _cents(t.amount), t.description, t.source, t.invoice.isoformat())
 
 
-def save(
-    conn: sqlite3.Connection, transactions: Iterable[Transaction], category_source: str = "llm"
-) -> SaveResult:
+def save(conn: sqlite3.Connection, transactions: Iterable[Transaction]) -> SaveResult:
     """Insere ignorando duplicatas. Lançamentos idênticos na mesma fatura
     (ex.: duas compras iguais no mesmo dia) são diferenciados por `seq`."""
     seen: Counter[tuple] = Counter()
@@ -79,7 +77,7 @@ def save(
                 "INSERT OR IGNORE INTO transactions"
                 " (date, amount_cents, description, source, invoice, seq, category, category_source)"
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (*key, seq, t.category.value, category_source),
+                (*key, seq, t.category.value, t.category_source),
             )
             if cur.rowcount:
                 inserted += 1

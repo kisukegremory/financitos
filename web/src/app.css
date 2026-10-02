@@ -63,3 +63,20 @@ tr.manual td:first-child { box-shadow: inset 3px 0 var(--accent); }
 .card strong { font-size: 1.1rem; }
 .card.active { border-color: var(--accent); }
 .card.total { border-style: dashed; }
+
+details.prompt {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+details.prompt summary { cursor: pointer; font-weight: 600; }
+details.prompt pre {
+  white-space: pre-wrap;
+  font-size: 0.82rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem;
+}
