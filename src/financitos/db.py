@@ -6,7 +6,7 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
-from financitos.models import Category, Transaction
+from financitos.models import Category, StoredTransaction, Transaction, TransactionUpdate
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS transactions (
@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS transactions (
 CREATE INDEX IF NOT EXISTS ix_transactions_invoice ON transactions (invoice, source);
 """
 
+KEY_COLUMNS = ("date", "amount_cents", "description", "source", "invoice")
+
 
 @dataclass
 class SaveResult:
@@ -43,7 +45,7 @@ def path_from_url(url: str) -> Path:
 def connect(url: str) -> sqlite3.Connection:
     path = path_from_url(url)
     path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(path)
+    conn = sqlite3.connect(path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
     return conn
@@ -53,27 +55,31 @@ def _cents(amount: Decimal) -> int:
     return int(amount * 100)
 
 
-def save(conn: sqlite3.Connection, transactions: Iterable[Transaction]) -> SaveResult:
+def _from_cents(cents: int) -> Decimal:
+    return (Decimal(cents) / 100).quantize(Decimal("0.01"))
+
+
+def _key(t: Transaction) -> tuple:
+    return (t.date.isoformat(), _cents(t.amount), t.description, t.source, t.invoice.isoformat())
+
+
+def save(
+    conn: sqlite3.Connection, transactions: Iterable[Transaction], category_source: str = "llm"
+) -> SaveResult:
     """Insere ignorando duplicatas. Lançamentos idênticos na mesma fatura
     (ex.: duas compras iguais no mesmo dia) são diferenciados por `seq`."""
     seen: Counter[tuple] = Counter()
     inserted = skipped = 0
     with conn:
         for t in transactions:
-            key = (
-                t.date.isoformat(),
-                _cents(t.amount),
-                t.description,
-                t.source,
-                t.invoice.isoformat(),
-            )
+            key = _key(t)
             seq = seen[key]
             seen[key] += 1
             cur = conn.execute(
                 "INSERT OR IGNORE INTO transactions"
-                " (date, amount_cents, description, source, invoice, seq, category)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (*key, seq, t.category.value),
+                " (date, amount_cents, description, source, invoice, seq, category, category_source)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (*key, seq, t.category.value, category_source),
             )
             if cur.rowcount:
                 inserted += 1
@@ -82,14 +88,70 @@ def save(conn: sqlite3.Connection, transactions: Iterable[Transaction]) -> SaveR
     return SaveResult(inserted, skipped)
 
 
-def _to_transaction(row: sqlite3.Row) -> Transaction:
-    return Transaction(
+def _next_seq(conn: sqlite3.Connection, key: tuple, exclude_id: int | None = None) -> int:
+    where = " AND ".join(f"{c} = ?" for c in KEY_COLUMNS)
+    row = conn.execute(
+        f"SELECT COALESCE(MAX(seq) + 1, 0) FROM transactions WHERE {where} AND id IS NOT ?",
+        (*key, exclude_id),
+    ).fetchone()
+    return row[0]
+
+
+def create(conn: sqlite3.Connection, t: Transaction) -> StoredTransaction:
+    """Insere manualmente (sempre insere: idênticos ganham o próximo `seq`)."""
+    key = _key(t)
+    with conn:
+        cur = conn.execute(
+            "INSERT INTO transactions"
+            " (date, amount_cents, description, source, invoice, seq, category, category_source)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, 'manual')",
+            (*key, _next_seq(conn, key), t.category.value),
+        )
+    return get(conn, cur.lastrowid)  # type: ignore[arg-type, return-value]
+
+
+def get(conn: sqlite3.Connection, id: int) -> StoredTransaction | None:
+    row = conn.execute("SELECT * FROM transactions WHERE id = ?", (id,)).fetchone()
+    return _to_transaction(row) if row else None
+
+
+def update(
+    conn: sqlite3.Connection, id: int, changes: TransactionUpdate
+) -> StoredTransaction | None:
+    current = get(conn, id)
+    if current is None:
+        return None
+    patch = changes.model_dump(exclude_unset=True, exclude_none=True)
+    if not patch:
+        return current
+    merged = Transaction(**{**current.model_dump(), **patch})
+    key = _key(merged)
+    category_source = "manual" if "category" in patch else current.category_source
+    with conn:
+        conn.execute(
+            "UPDATE transactions SET date = ?, amount_cents = ?, description = ?, source = ?,"
+            " invoice = ?, seq = ?, category = ?, category_source = ?,"
+            " updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = ?",
+            (*key, _next_seq(conn, key, id), merged.category.value, category_source, id),
+        )
+    return get(conn, id)
+
+
+def delete(conn: sqlite3.Connection, id: int) -> bool:
+    with conn:
+        return conn.execute("DELETE FROM transactions WHERE id = ?", (id,)).rowcount > 0
+
+
+def _to_transaction(row: sqlite3.Row) -> StoredTransaction:
+    return StoredTransaction(
+        id=row["id"],
         date=date.fromisoformat(row["date"]),
-        amount=Decimal(row["amount_cents"]) / 100,
+        amount=_from_cents(row["amount_cents"]),
         category=Category(row["category"]),
         description=row["description"],
         source=row["source"],
         invoice=date.fromisoformat(row["invoice"]),
+        category_source=row["category_source"],
     )
 
 
@@ -113,7 +175,7 @@ def list_transactions(
     invoice: date | None = None,
     source: str | None = None,
     category: Category | None = None,
-) -> list[Transaction]:
+) -> list[StoredTransaction]:
     where, params = _filters(invoice, source, category)
     rows = conn.execute(
         f"SELECT * FROM transactions{where} ORDER BY date DESC, id", params
@@ -130,4 +192,4 @@ def summary(
         " GROUP BY category ORDER BY cents DESC",
         params,
     ).fetchall()
-    return {Category(r["category"]): Decimal(r["cents"]) / 100 for r in rows}
+    return {Category(r["category"]): _from_cents(r["cents"]) for r in rows}

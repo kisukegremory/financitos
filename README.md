@@ -82,8 +82,32 @@ uv run financitos summary -i 2026-10   # total por caixinha
 ### Docker
 
 ```bash
-docker compose run --rm -T financitos parse --source picpay --invoice 2026-10 < fatura.txt
+# API (fica em 127.0.0.1:8000)
+docker compose up -d api
+
+# CLI sob demanda
+docker compose run --rm -T cli parse -s PicPay -i 2026-10 --save < data/fatura.txt
+docker compose run --rm cli summary -i 2026-10
 ```
+
+### API
+
+```bash
+uv run financitos serve --reload   # dev local; docs em http://127.0.0.1:8000/docs
+```
+
+| Método | Rota | O quê |
+|---|---|---|
+| GET | `/health` | Status (sem token) |
+| GET | `/categories` | Lista de caixinhas |
+| POST | `/parse` | `{text, source, invoice, save}` → lançamentos categorizados |
+| GET | `/transactions?invoice=&source=&category=` | Lista |
+| POST | `/transactions` | Cria manualmente |
+| GET/PUT/DELETE | `/transactions/{id}` | Lê / edita (mudar caixinha marca `manual`) / remove |
+| GET | `/invoices/{AAAA-MM}/summary` | Total por caixinha |
+
+Se `API_TOKEN` estiver definido no `.env`, todas as rotas (exceto `/health`) exigem `Authorization: Bearer <token>`.
+Datas trafegam em ISO (`2026-09-15`), valores como string decimal (`"42.90"`).
 
 ## Convenções de desenvolvimento
 

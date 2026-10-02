@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     openrouter_fallback_model: str | None = None
     database_url: str = "sqlite:///data/financitos.db"
     log_level: str = "WARNING"
+    api_token: SecretStr | None = None  # se definido, exige "Authorization: Bearer <token>"
+    api_host: str = "127.0.0.1"
+    api_port: int = 8000
 
 
 @lru_cache

@@ -4,7 +4,7 @@ from decimal import Decimal
 import pytest
 
 from financitos import db
-from financitos.models import Category, Transaction
+from financitos.models import Category, Transaction, TransactionUpdate
 
 INVOICE = date(2026, 10, 1)
 
@@ -36,7 +36,9 @@ def test_save_keeps_identical_purchases_and_skips_reimport(conn):
 def test_list_roundtrip_and_filters(conn):
     db.save(conn, [tx("Sonda", "191.27"), tx("Spotify", "40.90", "Contas e assinaturas")])
     rows = db.list_transactions(conn, INVOICE, "picpay", Category.MERCADO)
-    assert rows == [tx("Sonda", "191.27")]
+    assert [Transaction(**r.model_dump(exclude={"id", "category_source"})) for r in rows] == [
+        tx("Sonda", "191.27")
+    ]
 
 
 def test_summary_by_category(conn):
@@ -45,3 +47,19 @@ def test_summary_by_category(conn):
         Category.MERCADO: Decimal("15.75"),
         Category.SAUDE: Decimal("3.00"),
     }
+
+
+def test_update_category_marks_manual_and_keeps_identical_rows_apart(conn):
+    db.save(conn, [tx("Shimizu", "19.00", "Casa"), tx("Shimizu", "19.00", "Casa")])
+    first, second = db.list_transactions(conn)
+    updated = db.update(conn, first.id, TransactionUpdate(category=Category.PESSOAL))
+    assert updated.category is Category.PESSOAL
+    assert updated.category_source == "manual"
+    assert db.get(conn, second.id).category is Category.CASA
+
+
+def test_create_and_delete(conn):
+    created = db.create(conn, tx("Manual", "7.00"))
+    assert created.category_source == "manual"
+    assert db.delete(conn, created.id)
+    assert db.get(conn, created.id) is None

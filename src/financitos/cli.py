@@ -9,7 +9,7 @@ from typing import Annotated
 
 import typer
 
-from financitos import db
+from financitos import db, models
 from financitos.config import get_settings
 from financitos.llm import Categorizer
 from financitos.models import Category, Transaction
@@ -32,9 +32,10 @@ def main() -> None:
 
 def parse_invoice(value: str) -> date:
     try:
-        return datetime.strptime(value, "%Y-%m").date()
+        datetime.strptime(value, "%Y-%m")
     except ValueError as e:
         raise typer.BadParameter("use o formato AAAA-MM") from e
+    return models.parse_invoice(value)
 
 
 @app.command()
@@ -108,3 +109,21 @@ def summary(
 def print_total(transactions: list[Transaction]) -> None:
     total = sum((t.amount for t in transactions), start=Decimal(0))
     typer.echo(f"\n{len(transactions)} lançamentos · total R$ {format_amount(total)}", err=True)
+
+
+@app.command()
+def serve(
+    host: Annotated[str | None, typer.Option(help="Padrão: API_HOST")] = None,
+    port: Annotated[int | None, typer.Option(help="Padrão: API_PORT")] = None,
+    reload: Annotated[bool, typer.Option(help="Recarrega ao editar o código (dev)")] = False,
+) -> None:
+    """Sobe a API HTTP."""
+    import uvicorn
+
+    settings = get_settings()
+    uvicorn.run(
+        "financitos.api:app",
+        host=host or settings.api_host,
+        port=port or settings.api_port,
+        reload=reload,
+    )
