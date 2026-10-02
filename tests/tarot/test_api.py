@@ -72,13 +72,36 @@ def test_draw_is_seedable():
     assert cards.draw(random.Random(1)) == cards.draw(random.Random(1))
 
 
-def use_reader(choice: dict):
+SENECA = {"name": "Sêneca", "era": "Roma, séc. I", "why": "w", "works": ["Cartas a Lucílio"]}
+QUOTE = {"text": "Sofremos mais na imaginação.", "author": None, "source": "Cartas a Lucílio"}
+
+
+def routing_client(choice: dict, thinker: dict | None):
+    """Fake da LLM que responde conforme o prompt (as duas chamadas da leitura são paralelas)."""
+    from types import SimpleNamespace
+
+    def create(messages, **kwargs):
+        if "UM pensador" in messages[0]["content"]:
+            if thinker is None:
+                raise RuntimeError("fora do ar")
+            payload = thinker
+        else:
+            payload = choice
+        msg = SimpleNamespace(content=json.dumps(payload))
+        return SimpleNamespace(choices=[SimpleNamespace(message=msg)])
+
+    return SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+
+
+def use_reader(choice: dict, thinker: dict | None = None):
     from home.apps.tarot.api import get_reader
     from home.apps.tarot.llm import Reader
 
+    if thinker is None:
+        thinker = {"thinker": SENECA, "quotes": [QUOTE]}
     settings = app.dependency_overrides[get_settings]()
     app.dependency_overrides[get_reader] = lambda: Reader(
-        settings, client=fake_client(json.dumps(choice))
+        settings, client=routing_client(choice, thinker or None)
     )
 
 
@@ -149,3 +172,19 @@ def test_mode_prompts():
     assert "REAIS" in msgs[0]["content"] and "Platão" in msgs[0]["content"]
     assert "ex" not in msgs[1]["content"]  # exemplos de tom só no modo original
     assert "base" not in msgs[0]["content"]  # prompt base (frases inéditas) fica de fora
+
+
+def test_reading_brings_thinker_quotes(client):
+    use_reader({"new_phrase": "Respira.", "why": "w", "card_reading": "c"})
+    r = client.post(f"{BASE}/readings", json={"feeling": "ansioso"}).json()
+    assert r["thinker"]["name"] == "Sêneca"
+    assert r["quotes"] == [{**QUOTE, "author": "Sêneca"}]  # autor preenchido com o pensador
+    (listed,) = client.get(f"{BASE}/readings").json()
+    assert listed["thinker"] == r["thinker"] and listed["quotes"] == r["quotes"]
+
+
+def test_reading_survives_thinker_failure(client):
+    use_reader({"new_phrase": "Respira.", "why": "w", "card_reading": "c"}, thinker={})
+    r = client.post(f"{BASE}/readings", json={"feeling": "ansioso"})
+    assert r.status_code == 201
+    assert r.json()["thinker"] is None and r.json()["quotes"] == []

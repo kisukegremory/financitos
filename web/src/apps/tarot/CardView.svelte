@@ -20,7 +20,7 @@
   {#if error}<p class="error">{error}</p>{/if}
   {#if draw}
     {#key draw}
-      <div class="drawn"><TarotCard {draw} /></div>
+      <div class="drawn"><TarotCard {draw} reveal /></div>
     {/key}
   {/if}
 </section>

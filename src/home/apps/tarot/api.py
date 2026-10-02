@@ -1,4 +1,6 @@
+import logging
 import random
+from concurrent.futures import ThreadPoolExecutor
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -20,6 +22,8 @@ from home.apps.tarot.models import (
 )
 from home.core.config import Settings, get_settings
 from home.core.deps import Conn
+
+log = logging.getLogger(__name__)
 
 EXAMPLES = 8  # frases salvas mandadas à LLM como referência de tom
 MAX_COLLECTION = 300  # frases mandadas na leitura (favoritas primeiro, depois as mais novas)
@@ -130,7 +134,15 @@ def create_reading(
     saved = db.list_phrases(conn)
     phrases = sorted(saved, key=lambda p: not p.favorite)[:MAX_COLLECTION]
     drawn = cards.draw()
-    choice = reader.read(req.feeling, phrases, drawn)
+    # pensador + citações e escolha na coleção são independentes: em paralelo
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        thinker_job = pool.submit(reader.thinker_for, req.feeling)
+        choice = reader.read(req.feeling, phrases, drawn)
+        try:
+            found = thinker_job.result()
+        except Exception as e:  # o pensador é um extra: a leitura sai mesmo sem ele
+            log.warning("thinker lookup failed: %s", e)
+            found = None
 
     phrase_id = choice.phrase_id if choice.phrase_id in {p.id for p in phrases} else None
     new_phrase = (choice.new_phrase or "").strip() or None
@@ -144,6 +156,8 @@ def create_reading(
         choice.why,
         drawn,
         choice.card_reading,
+        found.thinker if found else None,
+        found.quotes if found else [],
     )
 
 

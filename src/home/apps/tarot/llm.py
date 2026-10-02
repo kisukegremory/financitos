@@ -6,6 +6,7 @@ from home.apps.tarot.models import (
     Phrase,
     ReadingChoice,
     Suggestions,
+    ThinkerQuotes,
     Thinkers,
 )
 from home.core.config import Settings
@@ -124,6 +125,20 @@ Significado: {card.reversed if draw.reversed else card.upright}"""
     ]
 
 
+THINKER_QUOTES_PROMPT = """Você conhece bem filosofia, estratégia e literatura clássica do \
+Ocidente e do Oriente. A pessoa vai contar como está se sentindo. Escolha UM pensador cujas ideias \
+conversam de verdade com esse momento (varie: não escolha sempre os mesmos) e traga {count} \
+citações REAIS e conhecidas dele, traduzidas para o português do Brasil, que falem com o que ela vive.
+
+- thinker: name, era (lugar e época), why (1 a 2 frases falando com a pessoa, ligando as ideias \
+dele ao momento dela), works (1 a 3 obras reais).
+- quotes: text, author (o nome do pensador) e source (a obra de onde vem).
+Nunca invente citações nem atribua a ele algo que não seja dele: se não tiver certeza, traga menos.
+Responda APENAS com JSON no formato:
+{{"thinker": {{"name": "...", "era": "...", "why": "...", "works": ["..."]}},
+"quotes": [{{"text": "...", "author": "...", "source": "..."}}]}}"""
+
+
 class Reader:
     def __init__(self, settings: Settings, client: OpenAI | None = None):
         self.llm = LLM(settings, client)
@@ -131,3 +146,14 @@ class Reader:
     def read(self, feeling: str, phrases: list[Phrase], draw: Draw) -> ReadingChoice:
         messages = build_reading_messages(feeling, phrases, draw)
         return self.llm.complete_json(messages, ReadingChoice, temperature=0.7)
+
+    def thinker_for(self, feeling: str, count: int = 3) -> ThinkerQuotes:
+        messages = [
+            {"role": "system", "content": THINKER_QUOTES_PROMPT.format(count=count)},
+            {"role": "user", "content": f"Como estou: {feeling}"},
+        ]
+        result = self.llm.complete_json(messages, ThinkerQuotes, temperature=0.4)
+        quotes = [q for q in result.quotes if q.text.strip()][:count]
+        for q in quotes:
+            q.author = q.author or result.thinker.name
+        return ThinkerQuotes(thinker=result.thinker, quotes=quotes)

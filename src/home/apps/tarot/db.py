@@ -1,7 +1,16 @@
+import json
 import sqlite3
 
 from home.apps.tarot import cards
-from home.apps.tarot.models import Draw, Phrase, PhraseIn, PhraseUpdate, Reading
+from home.apps.tarot.models import (
+    Draw,
+    Phrase,
+    PhraseIn,
+    PhraseUpdate,
+    Reading,
+    Suggestion,
+    Thinker,
+)
 from home.core import db as core_db
 
 SCHEMA = """
@@ -42,11 +51,13 @@ Escreva em português do Brasil. Evite clichês de autoajuda."""
 
 # Colunas adicionadas depois da criação da tabela: (nome, definição)
 PHRASE_MIGRATIONS = [("source", "TEXT")]
+READING_MIGRATIONS = [("thinker", "TEXT"), ("quotes", "TEXT")]  # JSON
 
 
 def init(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA)
     core_db.add_columns(conn, "tarot_phrases", PHRASE_MIGRATIONS)
+    core_db.add_columns(conn, "tarot_readings", READING_MIGRATIONS)
 
 
 core_db.register(init)
@@ -143,12 +154,13 @@ def create_reading(
     why: str,
     draw: Draw,
     card_reading: str,
+    thinker: Thinker | None = None,
+    quotes: list[Suggestion] | None = None,
 ) -> Reading:
     with conn:
         cur = conn.execute(
-            "INSERT INTO tarot_readings"
-            " (feeling, phrase_id, generated_text, why, card_id, reversed, card_reading)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO tarot_readings (feeling, phrase_id, generated_text, why, card_id,"
+            " reversed, card_reading, thinker, quotes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 feeling,
                 phrase_id,
@@ -157,6 +169,8 @@ def create_reading(
                 draw.card.id,
                 int(draw.reversed),
                 card_reading,
+                thinker.model_dump_json() if thinker else None,
+                json.dumps([q.model_dump() for q in quotes or []], ensure_ascii=False),
             ),
         )
     return get_reading(conn, cur.lastrowid)  # type: ignore[arg-type, return-value]
@@ -172,6 +186,8 @@ def _to_reading(conn: sqlite3.Connection, row: sqlite3.Row) -> Reading:
         why=row["why"],
         draw=Draw(card=card, reversed=bool(row["reversed"])),  # type: ignore[arg-type]
         card_reading=row["card_reading"],
+        thinker=Thinker.model_validate_json(row["thinker"]) if row["thinker"] else None,
+        quotes=[Suggestion(**q) for q in json.loads(row["quotes"] or "[]")],
         created_at=row["created_at"],
     )
 

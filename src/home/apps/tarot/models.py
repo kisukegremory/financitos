@@ -65,6 +65,19 @@ class Suggestions(BaseModel):
     items: list[Suggestion]
 
 
+class Thinker(BaseModel):
+    name: str
+    era: str  # ex.: "China, séc. V a.C."
+    why: str  # por que conversa com o tema
+    works: list[str]
+
+
+class Thinkers(BaseModel):
+    """Formato pedido à LLM na recomendação de pensadores."""
+
+    items: list[Thinker]
+
+
 class ReadingRequest(BaseModel):
     feeling: str = Field(min_length=1)
 
@@ -78,6 +91,13 @@ class ReadingChoice(BaseModel):
     card_reading: str
 
 
+class ThinkerQuotes(BaseModel):
+    """Formato pedido à LLM na leitura: um pensador para o momento e citações reais dele."""
+
+    thinker: Thinker
+    quotes: list[Suggestion]
+
+
 class Reading(BaseModel):
     id: int
     feeling: str
@@ -86,17 +106,6 @@ class Reading(BaseModel):
     why: str
     draw: Draw
     card_reading: str
+    thinker: Thinker | None = None  # None se a busca do pensador falhou
+    quotes: list[Suggestion] = []
     created_at: str
-
-
-class Thinker(BaseModel):
-    name: str
-    era: str  # ex.: "China, séc. V a.C."
-    why: str  # por que conversa com o tema
-    works: list[str]
-
-
-class Thinkers(BaseModel):
-    """Formato pedido à LLM na recomendação de pensadores."""
-
-    items: list[Thinker]

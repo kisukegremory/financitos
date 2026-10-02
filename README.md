@@ -21,8 +21,10 @@ O gerador tem três modos: **Original** (tom do prompt base), **Citação real**
 pensador, com autor e obra; a IA pode errar atribuições, então confira) e **Inspirada em** (frases novas no
 estilo de alguém). **Sugerir pensadores** recomenda nomes e obras para um tema; clicar escolhe o pensador.
 
-Na aba **Hoje**, você escreve como está e a LLM escolhe da coleção a frase que encaixa (ou sugere uma nova),
-explica a relação e interpreta a carta sorteada no seu contexto; as leituras ficam no histórico.
+Na aba **Hoje**, você escreve como está e, em paralelo, a LLM (1) escolhe um pensador que conversa com o
+momento e traz 3 citações reais dele, que podem ser guardadas com um clique, e (2) escolhe da sua coleção a
+frase que encaixa (ou sugere uma nova) e explica a relação. A carta sorteada vira na tela e é interpretada
+no seu contexto; as leituras ficam no histórico.
 As imagens ficam em `web/public/tarot/` e podem ser rebaixadas com
 `uv run --with pillow --with httpx scripts/fetch_tarot_images.py`.
 
