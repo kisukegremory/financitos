@@ -28,6 +28,8 @@ htmlcov/
 
 # --- Dados locais (SQLite, exports, faturas) ---
 data/
+inbox/
+*.txt
 *.db
 *.sqlite
 *.sqlite3

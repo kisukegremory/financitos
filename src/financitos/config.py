@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     openrouter_model: str = "deepseek/deepseek-chat"
     openrouter_fallback_model: str | None = None
     database_url: str = "sqlite:///data/financitos.db"
-    log_level: str = "INFO"
+    log_level: str = "WARNING"
 
 
 @lru_cache

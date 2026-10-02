@@ -23,6 +23,8 @@ class OutputFormat(StrEnum):
 @app.callback()
 def main() -> None:
     logging.basicConfig(level=get_settings().log_level, stream=sys.stderr)
+    for noisy in ("httpx", "httpx2"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
 def parse_invoice(value: str) -> date:
