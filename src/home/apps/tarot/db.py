@@ -1,6 +1,7 @@
 import sqlite3
 
-from home.apps.tarot.models import Phrase, PhraseIn, PhraseUpdate
+from home.apps.tarot import cards
+from home.apps.tarot.models import Draw, Phrase, PhraseIn, PhraseUpdate, Reading
 from home.core import db as core_db
 
 SCHEMA = """
@@ -13,6 +14,19 @@ CREATE TABLE IF NOT EXISTS tarot_phrases (
     favorite   INTEGER NOT NULL DEFAULT 0,
     note       TEXT,
     created_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+
+-- Leituras do "como estou hoje": sentimento -> frase + carta
+CREATE TABLE IF NOT EXISTS tarot_readings (
+    id             INTEGER PRIMARY KEY,
+    feeling        TEXT    NOT NULL,
+    phrase_id      INTEGER REFERENCES tarot_phrases (id) ON DELETE SET NULL,
+    generated_text TEXT,
+    why            TEXT    NOT NULL,
+    card_id        TEXT    NOT NULL,
+    reversed       INTEGER NOT NULL,
+    card_reading   TEXT    NOT NULL,
+    created_at     TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 
 CREATE TABLE IF NOT EXISTS tarot_settings (
@@ -85,6 +99,8 @@ def update_phrase(conn: sqlite3.Connection, id: int, changes: PhraseUpdate) -> P
 
 def delete_phrase(conn: sqlite3.Connection, id: int) -> bool:
     with conn:
+        # sem PRAGMA foreign_keys, o ON DELETE SET NULL não dispara sozinho
+        conn.execute("UPDATE tarot_readings SET phrase_id = NULL WHERE phrase_id = ?", (id,))
         return conn.execute("DELETE FROM tarot_phrases WHERE id = ?", (id,)).rowcount > 0
 
 
@@ -101,3 +117,62 @@ def set_base_prompt(conn: sqlite3.Connection, value: str) -> str:
             (value,),
         )
     return value
+
+
+# --- leituras ---
+
+
+def create_reading(
+    conn: sqlite3.Connection,
+    feeling: str,
+    phrase_id: int | None,
+    generated_text: str | None,
+    why: str,
+    draw: Draw,
+    card_reading: str,
+) -> Reading:
+    with conn:
+        cur = conn.execute(
+            "INSERT INTO tarot_readings"
+            " (feeling, phrase_id, generated_text, why, card_id, reversed, card_reading)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                feeling,
+                phrase_id,
+                generated_text,
+                why,
+                draw.card.id,
+                int(draw.reversed),
+                card_reading,
+            ),
+        )
+    return get_reading(conn, cur.lastrowid)  # type: ignore[arg-type, return-value]
+
+
+def _to_reading(conn: sqlite3.Connection, row: sqlite3.Row) -> Reading:
+    card = cards.get_card(row["card_id"])
+    return Reading(
+        id=row["id"],
+        feeling=row["feeling"],
+        phrase=get_phrase(conn, row["phrase_id"]) if row["phrase_id"] else None,
+        generated_text=row["generated_text"],
+        why=row["why"],
+        draw=Draw(card=card, reversed=bool(row["reversed"])),  # type: ignore[arg-type]
+        card_reading=row["card_reading"],
+        created_at=row["created_at"],
+    )
+
+
+def get_reading(conn: sqlite3.Connection, id: int) -> Reading | None:
+    row = conn.execute("SELECT * FROM tarot_readings WHERE id = ?", (id,)).fetchone()
+    return _to_reading(conn, row) if row else None
+
+
+def list_readings(conn: sqlite3.Connection, limit: int = 30) -> list[Reading]:
+    rows = conn.execute("SELECT * FROM tarot_readings ORDER BY id DESC LIMIT ?", (limit,))
+    return [_to_reading(conn, r) for r in rows.fetchall()]
+
+
+def delete_reading(conn: sqlite3.Connection, id: int) -> bool:
+    with conn:
+        return conn.execute("DELETE FROM tarot_readings WHERE id = ?", (id,)).rowcount > 0

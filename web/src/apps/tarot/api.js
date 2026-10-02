@@ -11,4 +11,7 @@ export const api = {
   basePrompt: () => request('GET', '/settings/base-prompt'),
   setBasePrompt: (value) => request('PUT', '/settings/base-prompt', { value }),
   draw: () => request('GET', '/cards/draw'),
+  read: (feeling) => request('POST', '/readings', { feeling }),
+  readings: () => request('GET', '/readings'),
+  removeReading: (id) => request('DELETE', `/readings/${id}`),
 }

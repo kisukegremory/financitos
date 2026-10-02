@@ -5,18 +5,32 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from home.apps.tarot import cards, db
-from home.apps.tarot.llm import PhraseWriter
-from home.apps.tarot.models import Card, Draw, Phrase, PhraseIn, PhraseUpdate, Suggestion
+from home.apps.tarot.llm import PhraseWriter, Reader
+from home.apps.tarot.models import (
+    Card,
+    Draw,
+    Phrase,
+    PhraseIn,
+    PhraseUpdate,
+    Reading,
+    ReadingRequest,
+    Suggestion,
+)
 from home.core.config import Settings, get_settings
 from home.core.deps import Conn
 
 EXAMPLES = 8  # frases salvas mandadas à LLM como referência de tom
+MAX_COLLECTION = 300  # frases mandadas na leitura (favoritas primeiro, depois as mais novas)
 
 router = APIRouter(tags=["tarot"])
 
 
 def get_writer(settings: Annotated[Settings, Depends(get_settings)]) -> PhraseWriter:
     return PhraseWriter(settings)
+
+
+def get_reader(settings: Annotated[Settings, Depends(get_settings)]) -> Reader:
+    return Reader(settings)
 
 
 class GenerateRequest(BaseModel):
@@ -85,3 +99,39 @@ def list_cards() -> list[Card]:
 @router.get("/cards/draw")
 def draw_card() -> Draw:
     return cards.draw()
+
+
+@router.post("/readings", status_code=status.HTTP_201_CREATED)
+def create_reading(
+    req: ReadingRequest, conn: Conn, reader: Annotated[Reader, Depends(get_reader)]
+) -> Reading:
+    """Sorteia uma carta e pede à LLM a frase da coleção que encaixa no sentimento."""
+    saved = db.list_phrases(conn)
+    phrases = sorted(saved, key=lambda p: not p.favorite)[:MAX_COLLECTION]
+    drawn = cards.draw()
+    choice = reader.read(req.feeling, phrases, drawn)
+
+    phrase_id = choice.phrase_id if choice.phrase_id in {p.id for p in phrases} else None
+    new_phrase = (choice.new_phrase or "").strip() or None
+    if phrase_id is None and new_phrase is None:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "a IA não escolheu nem sugeriu uma frase")
+    return db.create_reading(
+        conn,
+        req.feeling,
+        phrase_id,
+        None if phrase_id else new_phrase,
+        choice.why,
+        drawn,
+        choice.card_reading,
+    )
+
+
+@router.get("/readings")
+def list_readings(conn: Conn) -> list[Reading]:
+    return db.list_readings(conn)
+
+
+@router.delete("/readings/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_reading(id: int, conn: Conn) -> None:
+    if not db.delete_reading(conn, id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"leitura {id} não encontrada")

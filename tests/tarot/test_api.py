@@ -70,3 +70,40 @@ def test_cards(client):
 
 def test_draw_is_seedable():
     assert cards.draw(random.Random(1)) == cards.draw(random.Random(1))
+
+
+def use_reader(choice: dict):
+    from home.apps.tarot.api import get_reader
+    from home.apps.tarot.llm import Reader
+
+    settings = app.dependency_overrides[get_settings]()
+    app.dependency_overrides[get_reader] = lambda: Reader(
+        settings, client=fake_client(json.dumps(choice))
+    )
+
+
+def test_reading_picks_saved_phrase(client):
+    p = client.post(f"{BASE}/phrases", json={"text": "Tudo passa."}).json()
+    use_reader({"phrase_id": p["id"], "why": "porque passa", "card_reading": "a carta diz"})
+
+    reading = client.post(f"{BASE}/readings", json={"feeling": "ansioso"})
+    assert reading.status_code == 201
+    r = reading.json()
+    assert r["phrase"]["text"] == "Tudo passa." and r["generated_text"] is None
+    assert r["why"] == "porque passa" and r["draw"]["card"]["id"]
+
+    client.delete(f"{BASE}/phrases/{p['id']}")
+    (listed,) = client.get(f"{BASE}/readings").json()
+    assert listed["phrase"] is None and listed["feeling"] == "ansioso"
+
+
+def test_reading_with_unknown_id_falls_back_to_new_phrase(client):
+    use_reader({"phrase_id": 999, "new_phrase": "Respira.", "why": "w", "card_reading": "c"})
+    r = client.post(f"{BASE}/readings", json={"feeling": "cansado"}).json()
+    assert r["phrase"] is None and r["generated_text"] == "Respira."
+
+
+def test_reading_without_any_phrase_is_an_error(client):
+    use_reader({"phrase_id": 999, "why": "w", "card_reading": "c"})
+    assert client.post(f"{BASE}/readings", json={"feeling": "x"}).status_code == 502
+    assert client.get(f"{BASE}/readings").json() == []

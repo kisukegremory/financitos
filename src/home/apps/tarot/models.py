@@ -54,3 +54,27 @@ class Suggestions(BaseModel):
     """Formato pedido à LLM na geração de frases."""
 
     items: list[Suggestion]
+
+
+class ReadingRequest(BaseModel):
+    feeling: str = Field(min_length=1)
+
+
+class ReadingChoice(BaseModel):
+    """Formato pedido à LLM na leitura: uma frase salva (phrase_id) ou uma nova."""
+
+    phrase_id: int | None = None
+    new_phrase: str | None = None
+    why: str
+    card_reading: str
+
+
+class Reading(BaseModel):
+    id: int
+    feeling: str
+    phrase: Phrase | None  # None se a frase escolhida foi apagada depois
+    generated_text: str | None  # frase nova sugerida quando nenhuma salva encaixou
+    why: str
+    draw: Draw
+    card_reading: str
+    created_at: str
