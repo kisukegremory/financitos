@@ -1,11 +1,14 @@
+import os
 import secrets
 import sqlite3
 from collections.abc import Iterator
 from decimal import Decimal
+from pathlib import Path as FsPath
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from financitos import db
@@ -51,7 +54,7 @@ Conn = Annotated[sqlite3.Connection, Depends(get_conn)]
 InvoiceParam = Annotated[str, Field(pattern=INVOICE_PATTERN, examples=["2026-10"])]
 
 app = FastAPI(title="financitos", version="0.1.0")
-router = APIRouter(dependencies=[Depends(require_token)])
+router = APIRouter(prefix="/api", dependencies=[Depends(require_token)])
 
 
 class ParseRequest(BaseModel):
@@ -73,6 +76,11 @@ class CategoryTotal(BaseModel):
     total: Decimal
 
 
+class BulkResult(BaseModel):
+    inserted: int
+    skipped: int
+
+
 class Summary(BaseModel):
     invoice: str
     categories: list[CategoryTotal]
@@ -83,7 +91,7 @@ def _not_found(id: int) -> HTTPException:
     return HTTPException(status.HTTP_404_NOT_FOUND, f"lançamento {id} não encontrado")
 
 
-@app.get("/health")
+@app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
 
@@ -124,6 +132,13 @@ def create_transaction(t: Transaction, conn: Conn) -> StoredTransaction:
     return db.create(conn, t)
 
 
+@router.post("/transactions/bulk")
+def bulk_create(items: list[Transaction], conn: Conn) -> BulkResult:
+    """Salva lançamentos revisados (ex.: saída do /parse), ignorando duplicatas."""
+    result = db.save(conn, items)
+    return BulkResult(inserted=result.inserted, skipped=result.skipped)
+
+
 @router.get("/transactions/{id}")
 def get_transaction(id: int, conn: Conn) -> StoredTransaction:
     found = db.get(conn, id)
@@ -159,3 +174,13 @@ def invoice_summary(
 
 
 app.include_router(router)
+
+
+def mount_web(directory: FsPath) -> None:
+    """Serve a UI compilada (web/dist) na raiz, se existir."""
+    if directory.is_dir():
+        app.mount("/", StaticFiles(directory=directory, html=True), name="web")
+
+
+# lido direto do ambiente para não exigir OPENROUTER_API_KEY só para importar o app
+mount_web(FsPath(os.environ.get("WEB_DIST", "web/dist")))

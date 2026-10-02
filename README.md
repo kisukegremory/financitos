@@ -55,59 +55,67 @@ Detalhes em [`docs/PRD.md`](docs/PRD.md).
 
 ## Como rodar
 
-### Configuração
-
 ```bash
 cp .env.example .env   # e preencha OPENROUTER_API_KEY
 ```
 
-### Local (uv)
+### Uso normal: um comando, uma URL
+
+```bash
+docker compose up -d --build
+```
+
+Abra **http://financitos.localhost** (UI). A API fica em `/api` e a documentação interativa em `/docs`.
+O Traefik é a porta de entrada (porta 80, só na sua máquina) e encaminha para o container da app.
+`*.localhost` já aponta para a própria máquina nos navegadores, então não precisa mexer em `/etc/hosts`.
+
+```bash
+docker compose logs -f api   # logs
+docker compose down          # parar
+```
+
+### Pelo terminal (CLI)
 
 ```bash
 uv sync
-uv run financitos parse --source picpay --invoice 2026-10 data/fatura.txt
-# ou via stdin (ex.: área de transferência no Linux)
-xclip -o -sel clip | uv run financitos parse --source nubank --invoice 2026-10
-
-# salvar no SQLite (reimportar a mesma fatura não duplica)
-uv run financitos parse -s PicPay -i 2026-10 data/fatura.txt --save
-
-# consultar
+uv run financitos parse -s PicPay -i 2026-10 data/fatura.txt          # só mostra (TSV)
+uv run financitos parse -s PicPay -i 2026-10 data/fatura.txt --save   # mostra e salva
 uv run financitos list -i 2026-10 [-s PicPay] [-c Mercado]
-uv run financitos summary -i 2026-10   # total por caixinha
+uv run financitos summary -i 2026-10                                  # total por caixinha
 ```
 
-> Guarde as faturas em `data/` ou `inbox/` — ambos (e `*.txt`) são ignorados pelo git.
+Também funciona via Docker: `docker compose run --rm -T cli parse -s PicPay -i 2026-10 --save < data/fatura.txt`.
 
-### Docker
+> Guarde as faturas em `data/` ou `inbox/`; as duas pastas (e `*.txt`) são ignoradas pelo git.
+
+### Desenvolvendo a UI (hot reload, sem Node instalado)
 
 ```bash
-# API (fica em 127.0.0.1:8000)
-docker compose up -d api
-
-# CLI sob demanda
-docker compose run --rm -T cli parse -s PicPay -i 2026-10 --save < data/fatura.txt
-docker compose run --rm cli summary -i 2026-10
+docker compose --profile dev up -d
 ```
 
-### API
+Abra **http://dev.financitos.localhost**: a UI recarrega a cada alteração em `web/` e usa a mesma API.
 
-```bash
-uv run financitos serve --reload   # dev local; docs em http://127.0.0.1:8000/docs
-```
+### Rotas da API
 
 | Método | Rota | O quê |
 |---|---|---|
-| GET | `/health` | Status (sem token) |
-| GET | `/categories` | Lista de caixinhas |
-| POST | `/parse` | `{text, source, invoice, save}` → lançamentos categorizados |
-| GET | `/transactions?invoice=&source=&category=` | Lista |
-| POST | `/transactions` | Cria manualmente |
-| GET/PUT/DELETE | `/transactions/{id}` | Lê / edita (mudar caixinha marca `manual`) / remove |
-| GET | `/invoices/{AAAA-MM}/summary` | Total por caixinha |
+| GET | `/api/health` | Status (sem token) |
+| GET | `/api/categories` | Lista de caixinhas |
+| POST | `/api/parse` | `{text, source, invoice, save}` → lançamentos categorizados |
+| GET | `/api/transactions?invoice=&source=&category=` | Lista |
+| POST | `/api/transactions` | Cria manualmente |
+| POST | `/api/transactions/bulk` | Salva vários (ignora duplicatas) |
+| GET/PUT/DELETE | `/api/transactions/{id}` | Lê / edita (mudar caixinha marca `manual`) / remove |
+| GET | `/api/invoices/{AAAA-MM}/summary` | Total por caixinha |
 
-Se `API_TOKEN` estiver definido no `.env`, todas as rotas (exceto `/health`) exigem `Authorization: Bearer <token>`.
+Se `API_TOKEN` estiver definido no `.env`, todas as rotas (exceto `/api/health`) exigem `Authorization: Bearer <token>`.
 Datas trafegam em ISO (`2026-09-15`), valores como string decimal (`"42.90"`).
+
+### Na VPS (futuro)
+
+Defina `APP_HOST` no `.env` com o nome que você usa na VPN/Tailscale (ex.: `financitos.minha-tailnet.ts.net`)
+e ajuste a porta publicada do Traefik para a interface privada. TLS pode ser ligado no próprio Traefik.
 
 ## Convenções de desenvolvimento
 

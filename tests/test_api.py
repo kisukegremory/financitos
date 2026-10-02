@@ -30,32 +30,40 @@ def client(tmp_path):
 
 
 def test_requires_token(client):
-    assert client.get("/transactions", headers={"Authorization": "Bearer nope"}).status_code == 401
-    assert client.get("/health", headers={"Authorization": ""}).status_code == 200
+    assert (
+        client.get("/api/transactions", headers={"Authorization": "Bearer nope"}).status_code == 401
+    )
+    assert client.get("/api/health", headers={"Authorization": ""}).status_code == 200
 
 
 def test_parse_save_and_summary(client):
     body = {"text": "fatura", "source": "PicPay", "invoice": "2026-10", "save": True}
-    resp = client.post("/parse", json=body).json()
+    resp = client.post("/api/parse", json=body).json()
     assert resp["inserted"] == 1 and resp["total"] == "42.90"
 
-    summary = client.get("/invoices/2026-10/summary").json()
+    summary = client.get("/api/invoices/2026-10/summary").json()
     assert summary["categories"] == [{"category": "Mercado", "total": "42.90"}]
 
 
 def test_crud(client):
     created = client.post(
-        "/transactions", json={**ITEM, "source": "Nubank", "invoice": "2026-10"}
+        "/api/transactions", json={**ITEM, "source": "Nubank", "invoice": "2026-10"}
     ).json()
     assert created["invoice"] == "2026-10-01"
 
-    updated = client.put(f"/transactions/{created['id']}", json={"category": "Casa"}).json()
+    updated = client.put(f"/api/transactions/{created['id']}", json={"category": "Casa"}).json()
     assert updated["category"] == "Casa" and updated["category_source"] == "manual"
 
-    assert len(client.get("/transactions", params={"invoice": "2026-10"}).json()) == 1
-    assert client.delete(f"/transactions/{created['id']}").status_code == 204
-    assert client.get(f"/transactions/{created['id']}").status_code == 404
+    assert len(client.get("/api/transactions", params={"invoice": "2026-10"}).json()) == 1
+    assert client.delete(f"/api/transactions/{created['id']}").status_code == 204
+    assert client.get(f"/api/transactions/{created['id']}").status_code == 404
 
 
 def test_rejects_bad_invoice(client):
-    assert client.get("/invoices/2026-1/summary").status_code == 422
+    assert client.get("/api/invoices/2026-1/summary").status_code == 422
+
+
+def test_bulk_save_skips_duplicates(client):
+    items = [{**ITEM, "source": "PicPay", "invoice": "2026-10"}] * 2
+    assert client.post("/api/transactions/bulk", json=items).json() == {"inserted": 2, "skipped": 0}
+    assert client.post("/api/transactions/bulk", json=items).json() == {"inserted": 0, "skipped": 2}

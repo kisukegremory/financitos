@@ -1,3 +1,6 @@
+# Acesso: http://financitos.localhost  (UI + API em /api, docs em /docs)
+# Dev da UI com hot reload: http://dev.financitos.localhost  (docker compose --profile dev up)
+
 x-app: &app
   build: .
   image: financitos:latest
@@ -6,16 +9,36 @@ x-app: &app
     - ./data:/app/data
 
 services:
+  # Porta de entrada única: roteia pelo nome do host (labels abaixo).
+  # Na VPS: trocar o Host por um domínio da VPN/Tailscale e, se quiser, ligar TLS.
+  traefik:
+    image: traefik:v3.6
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+    ports:
+      # só na própria máquina (IPv4 e IPv6, pois *.localhost pode resolver para ::1)
+      - "127.0.0.1:80:80"
+      - "[::1]:80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
   api:
     <<: *app
     command: ["serve", "--host", "0.0.0.0", "--port", "8000"]
-    ports:
-      # só localhost; na VPS acesse via VPN/SSH tunnel
-      - "127.0.0.1:${API_PORT:-8000}:8000"
     restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.financitos.rule=Host(`${APP_HOST:-financitos.localhost}`)
+      - traefik.http.routers.financitos.entrypoints=web
+      - traefik.http.services.financitos.loadbalancer.server.port=8000
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
       interval: 30s
+      start_period: 10s
+      start_interval: 2s
       timeout: 3s
       retries: 3
 
@@ -24,3 +47,22 @@ services:
     <<: *app
     profiles: ["cli"]
     stdin_open: true
+
+  # UI com hot reload, sem Node na máquina
+  web-dev:
+    image: node:22-alpine
+    profiles: ["dev"]
+    user: "${UID:-1000}:${GID:-1000}"
+    working_dir: /web
+    command: sh -c "npm install && npm run dev"
+    environment:
+      API_TARGET: http://api:8000
+    volumes:
+      - ./web:/web
+    depends_on:
+      - api
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.financitos-dev.rule=Host(`dev.${APP_HOST:-financitos.localhost}`)
+      - traefik.http.routers.financitos-dev.entrypoints=web
+      - traefik.http.services.financitos-dev.loadbalancer.server.port=5173

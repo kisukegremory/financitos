@@ -30,7 +30,8 @@ tests
 docs
 *.md
 !README.md
-node_modules
+**/node_modules
+web/dist
 Dockerfile*
 compose*.yaml
 docker-compose*.yml
