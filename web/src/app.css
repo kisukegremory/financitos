@@ -80,3 +80,13 @@ details.prompt pre {
   border-radius: 6px;
   padding: 0.75rem;
 }
+
+input.note {
+  width: 100%;
+  min-width: 10rem;
+  box-sizing: border-box;
+  padding: 0.2rem 0.4rem;
+  background: transparent;
+  border-color: transparent;
+}
+input.note:hover, input.note:focus { border-color: var(--border); background: var(--bg); }

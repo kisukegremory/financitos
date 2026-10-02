@@ -33,6 +33,11 @@
     load()
   }
 
+  async function changeNote(item, note) {
+    await api.update(item.id, { note })
+    item.note = note || null
+  }
+
   async function remove(item) {
     if (!confirm(`Remover "${item.description}" (${money(item.amount)})?`)) return
     await api.remove(item.id)
@@ -85,7 +90,13 @@
       <strong>{items.length} lançamentos</strong>
       <button class="ghost" onclick={copy}>Copiar TSV</button>
     </div>
-    <TransactionTable {items} {categories} onchange={changeCategory} onremove={remove} />
+    <TransactionTable
+      {items}
+      {categories}
+      onchange={changeCategory}
+      onnote={changeNote}
+      onremove={remove}
+    />
   {:else}
     <p class="muted">Nenhum lançamento nessa fatura.</p>
   {/if}

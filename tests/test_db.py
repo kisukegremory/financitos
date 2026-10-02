@@ -63,3 +63,28 @@ def test_create_and_delete(conn):
     assert created.category_source == "manual"
     assert db.delete(conn, created.id)
     assert db.get(conn, created.id) is None
+
+
+def test_note_set_and_clear(conn):
+    db.save(conn, [tx("Abolicao", "58.00", "Pessoal")])
+    (row,) = db.list_transactions(conn)
+    assert (
+        db.update(conn, row.id, TransactionUpdate(note="  bar com a Ana ")).note == "bar com a Ana"
+    )
+    assert (
+        db.update(conn, row.id, TransactionUpdate(category=Category.PESSOAL)).note
+        == "bar com a Ana"
+    )
+    assert db.update(conn, row.id, TransactionUpdate(note="")).note is None
+
+
+def test_migrates_old_database_without_note(tmp_path):
+    import sqlite3
+
+    path = tmp_path / "old.db"
+    old = sqlite3.connect(path)
+    old.executescript(db.SCHEMA.replace("    note            TEXT,\n", ""))
+    old.close()
+    c = db.connect(f"sqlite:///{path}")
+    assert "note" in {r["name"] for r in c.execute("PRAGMA table_info(transactions)")}
+    c.close()

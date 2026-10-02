@@ -21,10 +21,14 @@ CREATE TABLE IF NOT EXISTS transactions (
     category_source TEXT    NOT NULL DEFAULT 'llm',
     created_at      TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
     updated_at      TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    note            TEXT,
     UNIQUE (date, amount_cents, description, source, invoice, seq)
 );
 CREATE INDEX IF NOT EXISTS ix_transactions_invoice ON transactions (invoice, source);
 """
+
+# Colunas adicionadas depois da criação da tabela: (nome, definição)
+MIGRATIONS = [("note", "TEXT")]
 
 KEY_COLUMNS = ("date", "amount_cents", "description", "source", "invoice")
 
@@ -48,7 +52,16 @@ def connect(url: str) -> sqlite3.Connection:
     conn = sqlite3.connect(path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    _migrate(conn)
     return conn
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    existing = {r["name"] for r in conn.execute("PRAGMA table_info(transactions)")}
+    with conn:
+        for name, definition in MIGRATIONS:
+            if name not in existing:
+                conn.execute(f"ALTER TABLE transactions ADD COLUMN {name} {definition}")
 
 
 def _cents(amount: Decimal) -> int:
@@ -75,9 +88,9 @@ def save(conn: sqlite3.Connection, transactions: Iterable[Transaction]) -> SaveR
             seen[key] += 1
             cur = conn.execute(
                 "INSERT OR IGNORE INTO transactions"
-                " (date, amount_cents, description, source, invoice, seq, category, category_source)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (*key, seq, t.category.value, t.category_source),
+                " (date, amount_cents, description, source, invoice, seq, category,"
+                " category_source, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (*key, seq, t.category.value, t.category_source, t.note),
             )
             if cur.rowcount:
                 inserted += 1
@@ -101,9 +114,9 @@ def create(conn: sqlite3.Connection, t: Transaction) -> StoredTransaction:
     with conn:
         cur = conn.execute(
             "INSERT INTO transactions"
-            " (date, amount_cents, description, source, invoice, seq, category, category_source)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, 'manual')",
-            (*key, _next_seq(conn, key), t.category.value),
+            " (date, amount_cents, description, source, invoice, seq, category,"
+            " category_source, note) VALUES (?, ?, ?, ?, ?, ?, ?, 'manual', ?)",
+            (*key, _next_seq(conn, key), t.category.value, t.note),
         )
     return get(conn, cur.lastrowid)  # type: ignore[arg-type, return-value]
 
@@ -119,7 +132,11 @@ def update(
     current = get(conn, id)
     if current is None:
         return None
-    patch = changes.model_dump(exclude_unset=True, exclude_none=True)
+    patch = {
+        k: v
+        for k, v in changes.model_dump(exclude_unset=True).items()
+        if v is not None or k == "note"  # note=None apaga o comentário
+    }
     if not patch:
         return current
     merged = Transaction(**{**current.model_dump(), **patch})
@@ -128,9 +145,16 @@ def update(
     with conn:
         conn.execute(
             "UPDATE transactions SET date = ?, amount_cents = ?, description = ?, source = ?,"
-            " invoice = ?, seq = ?, category = ?, category_source = ?,"
+            " invoice = ?, seq = ?, category = ?, category_source = ?, note = ?,"
             " updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = ?",
-            (*key, _next_seq(conn, key, id), merged.category.value, category_source, id),
+            (
+                *key,
+                _next_seq(conn, key, id),
+                merged.category.value,
+                category_source,
+                merged.note,
+                id,
+            ),
         )
     return get(conn, id)
 
@@ -150,6 +174,7 @@ def _to_transaction(row: sqlite3.Row) -> StoredTransaction:
         source=row["source"],
         invoice=date.fromisoformat(row["invoice"]),
         category_source=row["category_source"],
+        note=row["note"],
     )
 
 

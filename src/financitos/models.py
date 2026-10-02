@@ -50,6 +50,12 @@ class Transaction(ParsedItem):
     source: str
     invoice: date  # first day of the invoice month
     category_source: CategorySource = "llm"  # 'manual' quando eu corrijo a caixinha
+    note: str | None = None  # comentário livre, para lembrar do que se trata
+
+    @field_validator("note", mode="before")
+    @classmethod
+    def _blank_note(cls, v: object) -> object:
+        return (v.strip() or None) if isinstance(v, str) else v
 
     @field_validator("invoice", mode="before")
     @classmethod
@@ -66,12 +72,15 @@ class StoredTransaction(Transaction):
 
 
 class TransactionUpdate(BaseModel):
+    """Campos omitidos não mudam; `note` vazio/null apaga o comentário."""
+
     date: dt.date | None = None
     amount: Decimal | None = None
     category: Category | None = None
     description: str | None = None
     source: str | None = None
     invoice: dt.date | None = None
+    note: str | None = None
 
     @field_validator("invoice", mode="before")
     @classmethod

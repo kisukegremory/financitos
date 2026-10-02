@@ -89,6 +89,7 @@
         item.category = c
         item.category_source = 'manual'
       }}
+      onnote={(item, note) => (item.note = note || null)}
       onremove={(item) => (items = items.filter((t) => t !== item))}
     />
   </section>
