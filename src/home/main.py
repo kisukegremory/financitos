@@ -1,3 +1,4 @@
+import mimetypes
 import os
 from pathlib import Path
 
@@ -5,12 +6,16 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 from fastapi.responses import FileResponse
 
 from home.apps.financitos.api import router as financitos
+from home.apps.tarot.api import router as tarot
 from home.core.deps import require_token
+
+# a imagem slim do Python não traz o mapeamento de .webp (cartas do tarot)
+mimetypes.add_type("image/webp", ".webp")
 
 app = FastAPI(title="home", version="0.1.0")
 
 # cada app expõe um APIRouter, montado em /api/<app> atrás do mesmo token
-APPS: dict[str, APIRouter] = {"financitos": financitos}
+APPS: dict[str, APIRouter] = {"financitos": financitos, "tarot": tarot}
 for name, router in APPS.items():
     app.include_router(router, prefix=f"/api/{name}", dependencies=[Depends(require_token)])
 

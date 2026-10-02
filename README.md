@@ -6,10 +6,19 @@ A home (`/`) é um seletor de projetos e cada app vive no seu path:
 | App | UI | API | Código |
 |---|---|---|---|
 | 💸 financitos | `/financitos` | `/api/financitos` | `src/home/apps/financitos`, `web/src/apps/financitos` |
+| 🔮 tarot | `/tarot` | `/api/tarot` | `src/home/apps/tarot`, `web/src/apps/tarot` |
 
 O que é compartilhado fica em `src/home/core` (config, conexão SQLite, cliente LLM com fallback, token)
 e `web/src/lib` (cliente HTTP, roteador, formatação). Cada app registra suas tabelas (com prefixo, ex.: `fin_`)
 em `core.db.register`, expõe um `APIRouter` montado em `src/home/main.py` e uma página em `web/src/App.svelte`.
+
+## tarot
+
+Guarda frases que me marcaram, gera novas com a LLM (a partir de um prompt base editável, usando as
+favoritas como referência de tom; sugestões só são salvas depois de revisadas) e tira cartas do tarot
+Rider-Waite-Smith com significado normal/invertido em português (`src/home/apps/tarot/cards.json`).
+As imagens ficam em `web/public/tarot/` e podem ser rebaixadas com
+`uv run --with pillow --with httpx scripts/fetch_tarot_images.py`.
 
 ## financitos
 

@@ -1,0 +1,1094 @@
+[
+ {
+  "id": "major-00",
+  "name": "O Louco",
+  "arcana": "major",
+  "suit": null,
+  "number": 0,
+  "keywords": [
+   "começo",
+   "salto de fé",
+   "espontaneidade"
+  ],
+  "upright": "Um novo começo pede coragem para saltar sem ter todas as respostas. Confie no caminho e na leveza de quem ainda não sabe o que é impossível.",
+  "reversed": "Imprudência ou medo de começar. Pode ser um salto sem olhar ou a paralisia de quem nunca dá o primeiro passo."
+ },
+ {
+  "id": "major-01",
+  "name": "O Mago",
+  "arcana": "major",
+  "suit": null,
+  "number": 1,
+  "keywords": [
+   "vontade",
+   "habilidade",
+   "manifestação"
+  ],
+  "upright": "Você tem as ferramentas de que precisa. É hora de transformar intenção em ação com foco e iniciativa.",
+  "reversed": "Talento disperso, manipulação ou falta de direção. Há potencial, mas ele não está sendo bem usado."
+ },
+ {
+  "id": "major-02",
+  "name": "A Sacerdotisa",
+  "arcana": "major",
+  "suit": null,
+  "number": 2,
+  "keywords": [
+   "intuição",
+   "mistério",
+   "saber interior"
+  ],
+  "upright": "A resposta está dentro, não fora. Silencie, observe e confie no que você sente antes de entender.",
+  "reversed": "Desconexão da intuição, segredos ou excesso de ruído externo abafando a voz interior."
+ },
+ {
+  "id": "major-03",
+  "name": "A Imperatriz",
+  "arcana": "major",
+  "suit": null,
+  "number": 3,
+  "keywords": [
+   "abundância",
+   "cuidado",
+   "criatividade"
+  ],
+  "upright": "Tempo de nutrir e florescer. Cuide de si, crie, aproveite os prazeres simples e deixe as coisas crescerem.",
+  "reversed": "Bloqueio criativo, descuido consigo ou dependência. Talvez você esteja cuidando de tudo, menos de você."
+ },
+ {
+  "id": "major-04",
+  "name": "O Imperador",
+  "arcana": "major",
+  "suit": null,
+  "number": 4,
+  "keywords": [
+   "estrutura",
+   "autoridade",
+   "estabilidade"
+  ],
+  "upright": "Ordem e disciplina constroem o que dura. Assuma o comando, defina limites e sustente suas decisões.",
+  "reversed": "Rigidez, controle excessivo ou falta de estrutura. O poder pode estar mal usado ou ausente."
+ },
+ {
+  "id": "major-05",
+  "name": "O Hierofante",
+  "arcana": "major",
+  "suit": null,
+  "number": 5,
+  "keywords": [
+   "tradição",
+   "ensino",
+   "pertencimento"
+  ],
+  "upright": "Há sabedoria no que já foi trilhado. Busque mestres, rituais e valores que dão sentido.",
+  "reversed": "Questionamento de regras, rebeldia ou dogmas que já não servem. Hora de achar o próprio caminho."
+ },
+ {
+  "id": "major-06",
+  "name": "Os Enamorados",
+  "arcana": "major",
+  "suit": null,
+  "number": 6,
+  "keywords": [
+   "escolha",
+   "união",
+   "valores"
+  ],
+  "upright": "Uma escolha alinhada ao coração e aos seus valores. Relações e decisões que pedem verdade e inteireza.",
+  "reversed": "Desalinhamento, indecisão ou conflito entre o que você quer e o que faz."
+ },
+ {
+  "id": "major-07",
+  "name": "O Carro",
+  "arcana": "major",
+  "suit": null,
+  "number": 7,
+  "keywords": [
+   "determinação",
+   "vitória",
+   "direção"
+  ],
+  "upright": "Força de vontade para seguir adiante e vencer obstáculos. Segure as rédeas e mantenha o rumo.",
+  "reversed": "Perda de direção, forças opostas te puxando ou avanço sem controle."
+ },
+ {
+  "id": "major-08",
+  "name": "A Força",
+  "arcana": "major",
+  "suit": null,
+  "number": 8,
+  "keywords": [
+   "coragem",
+   "paciência",
+   "compaixão"
+  ],
+  "upright": "A verdadeira força é gentil. Dome seus impulsos com paciência e confie na sua coragem interior.",
+  "reversed": "Insegurança, autocrítica ou impulsos fora de controle. Falta acreditar em si."
+ },
+ {
+  "id": "major-09",
+  "name": "O Eremita",
+  "arcana": "major",
+  "suit": null,
+  "number": 9,
+  "keywords": [
+   "introspecção",
+   "busca",
+   "solitude"
+  ],
+  "upright": "Recolher-se para encontrar a própria luz. Um tempo a sós traz clareza e sabedoria.",
+  "reversed": "Isolamento excessivo, solidão ou fuga do mundo. Ou resistência a olhar para dentro."
+ },
+ {
+  "id": "major-10",
+  "name": "A Roda da Fortuna",
+  "arcana": "major",
+  "suit": null,
+  "number": 10,
+  "keywords": [
+   "ciclos",
+   "destino",
+   "mudança"
+  ],
+  "upright": "A roda gira: o que sobe, desce, e vice-versa. Aceite os ciclos e aproveite a virada.",
+  "reversed": "Resistência à mudança, maré de azar ou sensação de estar preso num ciclo que se repete."
+ },
+ {
+  "id": "major-11",
+  "name": "A Justiça",
+  "arcana": "major",
+  "suit": null,
+  "number": 11,
+  "keywords": [
+   "verdade",
+   "equilíbrio",
+   "consequência"
+  ],
+  "upright": "Cada ação tem sua consequência. Seja honesto, pese os fatos e decida com justiça.",
+  "reversed": "Injustiça, desonestidade ou fuga da responsabilidade. Algo está fora de equilíbrio."
+ },
+ {
+  "id": "major-12",
+  "name": "O Enforcado",
+  "arcana": "major",
+  "suit": null,
+  "number": 12,
+  "keywords": [
+   "pausa",
+   "rendição",
+   "nova perspectiva"
+  ],
+  "upright": "Às vezes avançar é parar. Solte o controle e veja a situação de outro ângulo.",
+  "reversed": "Estagnação, sacrifício inútil ou resistência em soltar. Adiando o inevitável."
+ },
+ {
+  "id": "major-13",
+  "name": "A Morte",
+  "arcana": "major",
+  "suit": null,
+  "number": 13,
+  "keywords": [
+   "fim",
+   "transformação",
+   "renascimento"
+  ],
+  "upright": "Algo precisa terminar para algo novo nascer. Deixe ir o que já cumpriu seu ciclo.",
+  "reversed": "Medo do fim, apego ao que já morreu ou transformação travada."
+ },
+ {
+  "id": "major-14",
+  "name": "A Temperança",
+  "arcana": "major",
+  "suit": null,
+  "number": 14,
+  "keywords": [
+   "equilíbrio",
+   "moderação",
+   "alquimia"
+  ],
+  "upright": "Misture os opostos com paciência. O caminho do meio cura e integra.",
+  "reversed": "Excessos, desequilíbrio ou pressa. Falta harmonia entre as partes da sua vida."
+ },
+ {
+  "id": "major-15",
+  "name": "O Diabo",
+  "arcana": "major",
+  "suit": null,
+  "number": 15,
+  "keywords": [
+   "apego",
+   "sombra",
+   "prisão"
+  ],
+  "upright": "Olhe para o que te prende: vícios, medos, relações. As correntes muitas vezes estão frouxas.",
+  "reversed": "Libertação, rompimento de amarras ou consciência da própria sombra."
+ },
+ {
+  "id": "major-16",
+  "name": "A Torre",
+  "arcana": "major",
+  "suit": null,
+  "number": 16,
+  "keywords": [
+   "ruptura",
+   "revelação",
+   "queda"
+  ],
+  "upright": "Estruturas falsas desmoronam de repente. Dói, mas abre espaço para a verdade.",
+  "reversed": "Medo da mudança, evitar o colapso ou uma crise interna sendo adiada."
+ },
+ {
+  "id": "major-17",
+  "name": "A Estrela",
+  "arcana": "major",
+  "suit": null,
+  "number": 17,
+  "keywords": [
+   "esperança",
+   "cura",
+   "inspiração"
+  ],
+  "upright": "Depois da tempestade, a calma. Renove a fé, cure-se e confie no futuro.",
+  "reversed": "Desesperança, desânimo ou desconexão da própria fé."
+ },
+ {
+  "id": "major-18",
+  "name": "A Lua",
+  "arcana": "major",
+  "suit": null,
+  "number": 18,
+  "keywords": [
+   "ilusão",
+   "medo",
+   "inconsciente"
+  ],
+  "upright": "Nem tudo é o que parece. Atravesse a névoa com cuidado e escute seus sonhos e medos.",
+  "reversed": "Confusão se dissipando, verdades vindo à tona ou medos perdendo força."
+ },
+ {
+  "id": "major-19",
+  "name": "O Sol",
+  "arcana": "major",
+  "suit": null,
+  "number": 19,
+  "keywords": [
+   "alegria",
+   "sucesso",
+   "vitalidade"
+  ],
+  "upright": "Clareza, calor e celebração. Tudo floresce; permita-se brilhar.",
+  "reversed": "Alegria contida, otimismo exagerado ou dificuldade em enxergar o lado bom."
+ },
+ {
+  "id": "major-20",
+  "name": "O Julgamento",
+  "arcana": "major",
+  "suit": null,
+  "number": 20,
+  "keywords": [
+   "despertar",
+   "chamado",
+   "renovação"
+  ],
+  "upright": "Um chamado para renascer. Avalie o passado, perdoe e atenda à sua vocação.",
+  "reversed": "Autocrítica pesada, culpa ou ignorar um chamado interior."
+ },
+ {
+  "id": "major-21",
+  "name": "O Mundo",
+  "arcana": "major",
+  "suit": null,
+  "number": 21,
+  "keywords": [
+   "realização",
+   "completude",
+   "integração"
+  ],
+  "upright": "Um ciclo se completa. Celebre a jornada e prepare-se para o próximo capítulo.",
+  "reversed": "Algo inacabado, falta de fechamento ou busca de atalhos para concluir."
+ },
+ {
+  "id": "wands-01",
+  "name": "Ás de Paus",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": 1,
+  "keywords": [
+   "inspiração",
+   "faísca",
+   "potencial"
+  ],
+  "upright": "Uma nova paixão ou ideia acende. Aproveite a energia criativa e comece.",
+  "reversed": "Atrasos, falta de motivação ou uma ideia que não decola."
+ },
+ {
+  "id": "wands-02",
+  "name": "Dois de Paus",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": 2,
+  "keywords": [
+   "planejamento",
+   "decisão",
+   "visão"
+  ],
+  "upright": "Você enxerga o horizonte e precisa decidir o próximo passo.",
+  "reversed": "Medo do desconhecido ou planos sem execução."
+ },
+ {
+  "id": "wands-03",
+  "name": "Três de Paus",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": 3,
+  "keywords": [
+   "expansão",
+   "perspectiva",
+   "espera"
+  ],
+  "upright": "Os primeiros resultados aparecem; olhe longe e expanda.",
+  "reversed": "Obstáculos, frustração com a demora ou falta de visão."
+ },
+ {
+  "id": "wands-04",
+  "name": "Quatro de Paus",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": 4,
+  "keywords": [
+   "celebração",
+   "lar",
+   "harmonia"
+  ],
+  "upright": "Momento de comemorar conquistas e se sentir em casa.",
+  "reversed": "Instabilidade em casa ou celebração adiada."
+ },
+ {
+  "id": "wands-05",
+  "name": "Cinco de Paus",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": 5,
+  "keywords": [
+   "conflito",
+   "competição",
+   "atrito"
+  ],
+  "upright": "Disputas e choques de ideias. Pode ser desafio saudável.",
+  "reversed": "Evitar conflitos ou tensão interna não resolvida."
+ },
+ {
+  "id": "wands-06",
+  "name": "Seis de Paus",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": 6,
+  "keywords": [
+   "vitória",
+   "reconhecimento",
+   "orgulho"
+  ],
+  "upright": "Sucesso visível e reconhecimento merecido.",
+  "reversed": "Ego, queda após o sucesso ou falta de reconhecimento."
+ },
+ {
+  "id": "wands-07",
+  "name": "Sete de Paus",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": 7,
+  "keywords": [
+   "defesa",
+   "persistência",
+   "firmeza"
+  ],
+  "upright": "Defenda sua posição; você tem vantagem.",
+  "reversed": "Cansaço de lutar, sentir-se acuado ou desistir."
+ },
+ {
+  "id": "wands-08",
+  "name": "Oito de Paus",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": 8,
+  "keywords": [
+   "rapidez",
+   "movimento",
+   "notícias"
+  ],
+  "upright": "As coisas aceleram; mensagens e avanços chegam.",
+  "reversed": "Atrasos, pressa frustrada ou falta de foco."
+ },
+ {
+  "id": "wands-09",
+  "name": "Nove de Paus",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": 9,
+  "keywords": [
+   "resiliência",
+   "limites",
+   "última prova"
+  ],
+  "upright": "Ferido mas de pé; falta pouco, persista.",
+  "reversed": "Exaustão, paranoia ou defensividade excessiva."
+ },
+ {
+  "id": "wands-10",
+  "name": "Dez de Paus",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": 10,
+  "keywords": [
+   "fardo",
+   "responsabilidade",
+   "sobrecarga"
+  ],
+  "upright": "Você está carregando demais. Delegue ou solte algo.",
+  "reversed": "Libertação de pesos ou colapso por excesso."
+ },
+ {
+  "id": "wands-11",
+  "name": "Valete de Paus",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": 11,
+  "keywords": [
+   "entusiasmo",
+   "curiosidade",
+   "descoberta"
+  ],
+  "upright": "Uma notícia ou ideia nova desperta seu entusiasmo.",
+  "reversed": "Ideias sem foco, impaciência ou notícias ruins."
+ },
+ {
+  "id": "wands-12",
+  "name": "Cavaleiro de Paus",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": 12,
+  "keywords": [
+   "aventura",
+   "impulso",
+   "energia"
+  ],
+  "upright": "Avance com ousadia e paixão rumo ao que quer.",
+  "reversed": "Impulsividade, imprudência ou raiva."
+ },
+ {
+  "id": "wands-13",
+  "name": "Rainha de Paus",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": 13,
+  "keywords": [
+   "confiança",
+   "carisma",
+   "determinação"
+  ],
+  "upright": "Brilhe com segurança e calor; você inspira os outros.",
+  "reversed": "Insegurança, ciúme ou exigência demais consigo."
+ },
+ {
+  "id": "wands-14",
+  "name": "Rei de Paus",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": 14,
+  "keywords": [
+   "liderança",
+   "visão",
+   "empreendedorismo"
+  ],
+  "upright": "Lidere com visão e ousadia; transforme ideias em realidade.",
+  "reversed": "Autoritarismo, impulsividade ou expectativas irreais."
+ },
+ {
+  "id": "cups-01",
+  "name": "Ás de Copas",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": 1,
+  "keywords": [
+   "amor novo",
+   "abertura",
+   "emoção"
+  ],
+  "upright": "O coração transborda: novo amor, compaixão ou criatividade.",
+  "reversed": "Emoções bloqueadas ou amor-próprio em falta."
+ },
+ {
+  "id": "cups-02",
+  "name": "Dois de Copas",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": 2,
+  "keywords": [
+   "parceria",
+   "conexão",
+   "atração"
+  ],
+  "upright": "Uma conexão mútua e equilibrada se forma.",
+  "reversed": "Desequilíbrio na relação ou desencontro."
+ },
+ {
+  "id": "cups-03",
+  "name": "Três de Copas",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": 3,
+  "keywords": [
+   "amizade",
+   "celebração",
+   "comunidade"
+  ],
+  "upright": "Celebre com quem você ama; a amizade é força.",
+  "reversed": "Excessos, fofoca ou isolamento do grupo."
+ },
+ {
+  "id": "cups-04",
+  "name": "Quatro de Copas",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": 4,
+  "keywords": [
+   "apatia",
+   "contemplação",
+   "insatisfação"
+  ],
+  "upright": "Algo novo é oferecido, mas você está voltado para dentro.",
+  "reversed": "Despertar, aceitar oportunidades ou sair da apatia."
+ },
+ {
+  "id": "cups-05",
+  "name": "Cinco de Copas",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": 5,
+  "keywords": [
+   "perda",
+   "luto",
+   "arrependimento"
+  ],
+  "upright": "Há dor pelo que se perdeu, mas ainda restam taças de pé.",
+  "reversed": "Aceitação, perdão e seguir em frente."
+ },
+ {
+  "id": "cups-06",
+  "name": "Seis de Copas",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": 6,
+  "keywords": [
+   "nostalgia",
+   "memória",
+   "inocência"
+  ],
+  "upright": "Lembranças doces e reencontros com o passado.",
+  "reversed": "Preso ao passado ou idealização da infância."
+ },
+ {
+  "id": "cups-07",
+  "name": "Sete de Copas",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": 7,
+  "keywords": [
+   "ilusão",
+   "escolhas",
+   "fantasia"
+  ],
+  "upright": "Muitas opções e devaneios; nem todas são reais.",
+  "reversed": "Clareza, foco ou fim das ilusões."
+ },
+ {
+  "id": "cups-08",
+  "name": "Oito de Copas",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": 8,
+  "keywords": [
+   "partida",
+   "busca",
+   "desapego"
+  ],
+  "upright": "Deixar para trás o que não nutre mais, em busca de sentido.",
+  "reversed": "Medo de partir ou ficar onde não se é feliz."
+ },
+ {
+  "id": "cups-09",
+  "name": "Nove de Copas",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": 9,
+  "keywords": [
+   "satisfação",
+   "desejo realizado",
+   "gratidão"
+  ],
+  "upright": "Um desejo se cumpre; aprecie o que tem.",
+  "reversed": "Insatisfação, materialismo ou desejo vazio."
+ },
+ {
+  "id": "cups-10",
+  "name": "Dez de Copas",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": 10,
+  "keywords": [
+   "harmonia",
+   "família",
+   "plenitude"
+  ],
+  "upright": "Felicidade emocional plena e laços de amor.",
+  "reversed": "Desarmonia familiar ou expectativa irreal de perfeição."
+ },
+ {
+  "id": "cups-11",
+  "name": "Valete de Copas",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": 11,
+  "keywords": [
+   "sensibilidade",
+   "mensagem afetiva",
+   "sonho"
+  ],
+  "upright": "Uma mensagem emocional ou intuição criativa surge.",
+  "reversed": "Imaturidade emocional ou bloqueio criativo."
+ },
+ {
+  "id": "cups-12",
+  "name": "Cavaleiro de Copas",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": 12,
+  "keywords": [
+   "romance",
+   "charme",
+   "idealismo"
+  ],
+  "upright": "Siga o coração; um convite romântico ou criativo.",
+  "reversed": "Mudanças de humor, ilusão ou promessas vazias."
+ },
+ {
+  "id": "cups-13",
+  "name": "Rainha de Copas",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": 13,
+  "keywords": [
+   "compaixão",
+   "acolhimento",
+   "intuição"
+  ],
+  "upright": "Acolha com empatia, inclusive a si mesmo.",
+  "reversed": "Dependência emocional ou se perder nos outros."
+ },
+ {
+  "id": "cups-14",
+  "name": "Rei de Copas",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": 14,
+  "keywords": [
+   "equilíbrio emocional",
+   "maturidade",
+   "diplomacia"
+  ],
+  "upright": "Sinta sem se afogar; lidere com o coração calmo.",
+  "reversed": "Manipulação emocional ou repressão de sentimentos."
+ },
+ {
+  "id": "swords-01",
+  "name": "Ás de Espadas",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": 1,
+  "keywords": [
+   "clareza",
+   "verdade",
+   "ruptura"
+  ],
+  "upright": "Uma ideia clara corta a confusão. Hora da verdade.",
+  "reversed": "Confusão mental ou verdade usada como arma."
+ },
+ {
+  "id": "swords-02",
+  "name": "Dois de Espadas",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": 2,
+  "keywords": [
+   "impasse",
+   "indecisão",
+   "bloqueio"
+  ],
+  "upright": "Você evita escolher; tirar a venda é necessário.",
+  "reversed": "Sobrecarga de informação ou decisão forçada."
+ },
+ {
+  "id": "swords-03",
+  "name": "Três de Espadas",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": 3,
+  "keywords": [
+   "dor",
+   "coração partido",
+   "tristeza"
+  ],
+  "upright": "Uma dor que precisa ser sentida para curar.",
+  "reversed": "Recuperação, perdão e liberação da mágoa."
+ },
+ {
+  "id": "swords-04",
+  "name": "Quatro de Espadas",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": 4,
+  "keywords": [
+   "descanso",
+   "recuperação",
+   "pausa"
+  ],
+  "upright": "Pare e recarregue; a mente precisa de silêncio.",
+  "reversed": "Inquietação, esgotamento ou volta precipitada."
+ },
+ {
+  "id": "swords-05",
+  "name": "Cinco de Espadas",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": 5,
+  "keywords": [
+   "conflito",
+   "derrota",
+   "orgulho"
+  ],
+  "upright": "Vencer a qualquer custo pode custar caro.",
+  "reversed": "Reconciliação ou arrependimento após o conflito."
+ },
+ {
+  "id": "swords-06",
+  "name": "Seis de Espadas",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": 6,
+  "keywords": [
+   "transição",
+   "deixar para trás",
+   "travessia"
+  ],
+  "upright": "Mudando para águas mais calmas, aos poucos.",
+  "reversed": "Resistência à mudança ou bagagem que não solta."
+ },
+ {
+  "id": "swords-07",
+  "name": "Sete de Espadas",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": 7,
+  "keywords": [
+   "estratégia",
+   "esquiva",
+   "segredo"
+  ],
+  "upright": "Aja com astúcia, mas cuidado com autoengano.",
+  "reversed": "Confissão, consciência pesada ou ser descoberto."
+ },
+ {
+  "id": "swords-08",
+  "name": "Oito de Espadas",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": 8,
+  "keywords": [
+   "restrição",
+   "prisão mental",
+   "vitimização"
+  ],
+  "upright": "As amarras são mais mentais do que reais.",
+  "reversed": "Libertação, nova perspectiva e autonomia."
+ },
+ {
+  "id": "swords-09",
+  "name": "Nove de Espadas",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": 9,
+  "keywords": [
+   "ansiedade",
+   "insônia",
+   "preocupação"
+  ],
+  "upright": "Medos à noite crescem mais que a realidade.",
+  "reversed": "Esperança, desabafo ou ansiedade aliviada."
+ },
+ {
+  "id": "swords-10",
+  "name": "Dez de Espadas",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": 10,
+  "keywords": [
+   "fim doloroso",
+   "fundo do poço",
+   "encerramento"
+  ],
+  "upright": "Chegou ao limite; daqui só dá para subir.",
+  "reversed": "Recuperação ou resistir a um fim inevitável."
+ },
+ {
+  "id": "swords-11",
+  "name": "Valete de Espadas",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": 11,
+  "keywords": [
+   "curiosidade",
+   "vigilância",
+   "ideias novas"
+  ],
+  "upright": "Mente afiada e sede de aprender.",
+  "reversed": "Fofoca, palavras impensadas ou dispersão."
+ },
+ {
+  "id": "swords-12",
+  "name": "Cavaleiro de Espadas",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": 12,
+  "keywords": [
+   "ambição",
+   "pressa",
+   "assertividade"
+  ],
+  "upright": "Avance com foco e coragem intelectual.",
+  "reversed": "Precipitação, agressividade ou falar sem pensar."
+ },
+ {
+  "id": "swords-13",
+  "name": "Rainha de Espadas",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": 13,
+  "keywords": [
+   "independência",
+   "clareza",
+   "honestidade"
+  ],
+  "upright": "Veja com clareza e diga a verdade com limites.",
+  "reversed": "Frieza, amargura ou crítica cruel."
+ },
+ {
+  "id": "swords-14",
+  "name": "Rei de Espadas",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": 14,
+  "keywords": [
+   "razão",
+   "autoridade intelectual",
+   "ética"
+  ],
+  "upright": "Decida com lógica, justiça e firmeza.",
+  "reversed": "Abuso de poder, manipulação ou rigidez."
+ },
+ {
+  "id": "pentacles-01",
+  "name": "Ás de Ouros",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": 1,
+  "keywords": [
+   "oportunidade",
+   "prosperidade",
+   "semente"
+  ],
+  "upright": "Uma nova chance concreta: emprego, dinheiro, saúde.",
+  "reversed": "Oportunidade perdida ou má gestão de recursos."
+ },
+ {
+  "id": "pentacles-02",
+  "name": "Dois de Ouros",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": 2,
+  "keywords": [
+   "equilíbrio",
+   "malabarismo",
+   "adaptação"
+  ],
+  "upright": "Equilibrando prioridades com flexibilidade.",
+  "reversed": "Sobrecarga, desorganização ou finanças apertadas."
+ },
+ {
+  "id": "pentacles-03",
+  "name": "Três de Ouros",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": 3,
+  "keywords": [
+   "trabalho em equipe",
+   "aprendizado",
+   "ofício"
+  ],
+  "upright": "Colaboração e competência constroem algo sólido.",
+  "reversed": "Falta de cooperação ou trabalho mal feito."
+ },
+ {
+  "id": "pentacles-04",
+  "name": "Quatro de Ouros",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": 4,
+  "keywords": [
+   "segurança",
+   "controle",
+   "apego"
+  ],
+  "upright": "Proteger o que tem é bom, mas não se feche.",
+  "reversed": "Avareza, medo de perder ou soltar o controle."
+ },
+ {
+  "id": "pentacles-05",
+  "name": "Cinco de Ouros",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": 5,
+  "keywords": [
+   "dificuldade",
+   "escassez",
+   "exclusão"
+  ],
+  "upright": "Tempo de aperto, mas a ajuda está mais perto do que parece.",
+  "reversed": "Recuperação financeira ou fim do isolamento."
+ },
+ {
+  "id": "pentacles-06",
+  "name": "Seis de Ouros",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": 6,
+  "keywords": [
+   "generosidade",
+   "troca",
+   "gratidão"
+  ],
+  "upright": "Dar e receber em equilíbrio.",
+  "reversed": "Dívidas, generosidade com condições ou desigualdade."
+ },
+ {
+  "id": "pentacles-07",
+  "name": "Sete de Ouros",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": 7,
+  "keywords": [
+   "paciência",
+   "investimento",
+   "avaliação"
+  ],
+  "upright": "Os frutos vêm com tempo; avalie seu progresso.",
+  "reversed": "Impaciência, retorno baixo ou esforço sem direção."
+ },
+ {
+  "id": "pentacles-08",
+  "name": "Oito de Ouros",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": 8,
+  "keywords": [
+   "dedicação",
+   "habilidade",
+   "prática"
+  ],
+  "upright": "Aperfeiçoe-se com constância e atenção aos detalhes.",
+  "reversed": "Perfeccionismo, tédio ou falta de foco."
+ },
+ {
+  "id": "pentacles-09",
+  "name": "Nove de Ouros",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": 9,
+  "keywords": [
+   "independência",
+   "conforto",
+   "conquista"
+  ],
+  "upright": "Desfrute do que construiu com seu esforço.",
+  "reversed": "Dependência financeira ou excesso de trabalho."
+ },
+ {
+  "id": "pentacles-10",
+  "name": "Dez de Ouros",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": 10,
+  "keywords": [
+   "legado",
+   "família",
+   "riqueza duradoura"
+  ],
+  "upright": "Estabilidade de longo prazo e herança.",
+  "reversed": "Conflitos familiares por dinheiro ou instabilidade."
+ },
+ {
+  "id": "pentacles-11",
+  "name": "Valete de Ouros",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": 11,
+  "keywords": [
+   "estudo",
+   "ambição",
+   "manifestação"
+  ],
+  "upright": "Um novo projeto ou estudo promissor começa.",
+  "reversed": "Procrastinação ou falta de progresso."
+ },
+ {
+  "id": "pentacles-12",
+  "name": "Cavaleiro de Ouros",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": 12,
+  "keywords": [
+   "constância",
+   "rotina",
+   "responsabilidade"
+  ],
+  "upright": "Devagar e sempre: confiável e metódico.",
+  "reversed": "Estagnação, tédio ou preguiça."
+ },
+ {
+  "id": "pentacles-13",
+  "name": "Rainha de Ouros",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": 13,
+  "keywords": [
+   "cuidado prático",
+   "abundância",
+   "nutrição"
+  ],
+  "upright": "Cuide do lar, do corpo e dos recursos com sabedoria.",
+  "reversed": "Desequilíbrio entre trabalho e casa ou descuido."
+ },
+ {
+  "id": "pentacles-14",
+  "name": "Rei de Ouros",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": 14,
+  "keywords": [
+   "prosperidade",
+   "segurança",
+   "sucesso material"
+  ],
+  "upright": "Sucesso estável construído com disciplina.",
+  "reversed": "Ganância, teimosia ou obsessão por status."
+ }
+]
