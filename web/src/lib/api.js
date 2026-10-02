@@ -31,6 +31,10 @@ export const api = {
   list: (params) => request('GET', `/transactions?${new URLSearchParams(clean(params))}`),
   update: (id, changes) => request('PUT', `/transactions/${id}`, changes),
   remove: (id) => request('DELETE', `/transactions/${id}`),
+  pay: (invoice, source, paid_at) =>
+    request('POST', `/invoices/${invoice}/pay`, { source, paid_at: paid_at || null }),
+  payments: (params) => request('GET', `/payments?${new URLSearchParams(clean(params))}`),
+  removePayment: (id) => request('DELETE', `/payments/${id}`),
   summary: (invoice, source) =>
     request('GET', `/invoices/${invoice}/summary?${new URLSearchParams(clean({ source }))}`),
 }

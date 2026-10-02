@@ -6,7 +6,16 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
-from financitos.models import Category, StoredTransaction, Transaction, TransactionUpdate
+from financitos.models import (
+    Category,
+    CategoryBalance,
+    InvoiceSummary,
+    Payment,
+    PaymentIn,
+    StoredTransaction,
+    Transaction,
+    TransactionUpdate,
+)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS transactions (
@@ -25,6 +34,19 @@ CREATE TABLE IF NOT EXISTS transactions (
     UNIQUE (date, amount_cents, description, source, invoice, seq)
 );
 CREATE INDEX IF NOT EXISTS ix_transactions_invoice ON transactions (invoice, source);
+
+-- Valores puxados de cada caixinha para pagar a fatura (inclusive antecipado)
+CREATE TABLE IF NOT EXISTS payments (
+    id           INTEGER PRIMARY KEY,
+    invoice      TEXT    NOT NULL,  -- ISO 8601, 1º dia do mês
+    source       TEXT    NOT NULL,
+    category     TEXT    NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    paid_at      TEXT    NOT NULL,  -- ISO 8601 (AAAA-MM-DD)
+    note         TEXT,
+    created_at   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX IF NOT EXISTS ix_payments_invoice ON payments (invoice, source);
 """
 
 # Colunas adicionadas depois da criação da tabela: (nome, definição)
@@ -206,13 +228,105 @@ def list_transactions(
     return [_to_transaction(r) for r in rows]
 
 
-def summary(
-    conn: sqlite3.Connection, invoice: date, source: str | None = None
-) -> dict[Category, Decimal]:
+def summary(conn: sqlite3.Connection, invoice: date, source: str | None = None) -> InvoiceSummary:
+    """Devido × pago × falta por caixinha. Pagamentos antecipados abatem o devido;
+    lançamentos que entram depois aparecem como o que falta pagar."""
     where, params = _filters(invoice, source, None)
-    rows = conn.execute(
-        f"SELECT category, SUM(amount_cents) AS cents FROM transactions{where}"
-        " GROUP BY category ORDER BY cents DESC",
-        params,
-    ).fetchall()
-    return {Category(r["category"]): _from_cents(r["cents"]) for r in rows}
+    owed = {
+        r["category"]: r["cents"]
+        for r in conn.execute(
+            f"SELECT category, SUM(amount_cents) AS cents FROM transactions{where}"
+            " GROUP BY category",
+            params,
+        )
+    }
+    paid = {
+        r["category"]: r["cents"]
+        for r in conn.execute(
+            f"SELECT category, SUM(amount_cents) AS cents FROM payments{where} GROUP BY category",
+            params,
+        )
+    }
+    categories = [
+        CategoryBalance(
+            category=Category(c),
+            total=_from_cents(owed.get(c, 0)),
+            paid=_from_cents(paid.get(c, 0)),
+            remaining=_from_cents(owed.get(c, 0) - paid.get(c, 0)),
+        )
+        for c in sorted(owed.keys() | paid.keys(), key=lambda c: -owed.get(c, 0))
+    ]
+    total, total_paid = sum(owed.values()), sum(paid.values())
+    return InvoiceSummary(
+        invoice=invoice.strftime("%Y-%m"),
+        categories=categories,
+        total=_from_cents(total),
+        paid=_from_cents(total_paid),
+        remaining=_from_cents(total - total_paid),
+    )
+
+
+# --- pagamentos ---
+
+
+def _to_payment(row: sqlite3.Row) -> Payment:
+    return Payment(
+        id=row["id"],
+        invoice=date.fromisoformat(row["invoice"]),
+        source=row["source"],
+        category=Category(row["category"]),
+        amount=_from_cents(row["amount_cents"]),
+        paid_at=date.fromisoformat(row["paid_at"]),
+        note=row["note"],
+    )
+
+
+def add_payment(conn: sqlite3.Connection, p: PaymentIn) -> Payment:
+    with conn:
+        cur = conn.execute(
+            "INSERT INTO payments (invoice, source, category, amount_cents, paid_at, note)"
+            " VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                p.invoice.isoformat(),
+                p.source,
+                p.category.value,
+                _cents(p.amount),
+                p.paid_at.isoformat(),
+                p.note,
+            ),
+        )
+    row = conn.execute("SELECT * FROM payments WHERE id = ?", (cur.lastrowid,)).fetchone()
+    return _to_payment(row)
+
+
+def pay_remaining(
+    conn: sqlite3.Connection, invoice: date, source: str, paid_at: date | None = None
+) -> list[Payment]:
+    """Registra, para cada caixinha com saldo devedor, um pagamento do que falta."""
+    return [
+        add_payment(
+            conn,
+            PaymentIn(
+                invoice=invoice,
+                source=source,
+                category=c.category,
+                amount=c.remaining,
+                paid_at=paid_at or date.today(),
+            ),
+        )
+        for c in summary(conn, invoice, source).categories
+        if c.remaining > 0
+    ]
+
+
+def list_payments(
+    conn: sqlite3.Connection, invoice: date | None = None, source: str | None = None
+) -> list[Payment]:
+    where, params = _filters(invoice, source, None)
+    rows = conn.execute(f"SELECT * FROM payments{where} ORDER BY paid_at DESC, id", params)
+    return [_to_payment(r) for r in rows]
+
+
+def delete_payment(conn: sqlite3.Connection, id: int) -> bool:
+    with conn:
+        return conn.execute("DELETE FROM payments WHERE id = ?", (id,)).rowcount > 0

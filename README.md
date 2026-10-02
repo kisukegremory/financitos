@@ -81,7 +81,8 @@ uv sync
 uv run financitos parse -s PicPay -i 2026-10 data/fatura.txt          # só mostra (TSV)
 uv run financitos parse -s PicPay -i 2026-10 data/fatura.txt --save   # mostra e salva
 uv run financitos list -i 2026-10 [-s PicPay] [-c Mercado]
-uv run financitos summary -i 2026-10                                  # total por caixinha
+uv run financitos summary -i 2026-10                                  # devido × pago × falta por caixinha
+uv run financitos pay -s PicPay -i 2026-10 [-d 2026-10-02]             # paga o que falta (vale antecipado)
 ```
 
 Também funciona via Docker: `docker compose run --rm -T cli parse -s PicPay -i 2026-10 --save < data/fatura.txt`.
@@ -107,7 +108,10 @@ Abra **http://dev.financitos.localhost**: a UI recarrega a cada alteração em `
 | POST | `/api/transactions` | Cria manualmente |
 | POST | `/api/transactions/bulk` | Salva vários (ignora duplicatas) |
 | GET/PUT/DELETE | `/api/transactions/{id}` | Lê / edita (mudar caixinha marca `manual`) / remove |
-| GET | `/api/invoices/{AAAA-MM}/summary` | Total por caixinha |
+| GET | `/api/invoices/{AAAA-MM}/summary` | Devido × pago × falta por caixinha |
+| POST | `/api/invoices/{AAAA-MM}/pay` | `{source, paid_at}` → paga o que falta em cada caixinha |
+| GET/POST | `/api/payments` | Lista / registra um pagamento avulso (caixinha + valor) |
+| DELETE | `/api/payments/{id}` | Desfaz um pagamento |
 
 Se `API_TOKEN` estiver definido no `.env`, todas as rotas (exceto `/api/health`) exigem `Authorization: Bearer <token>`.
 Datas trafegam em ISO (`2026-09-15`), valores como string decimal (`"42.90"`).

@@ -43,6 +43,14 @@ def parse_invoice(value: str) -> date:
     return date.fromisoformat(value[:7] + "-01")
 
 
+def _first_day_of_month(v: object) -> object:
+    if isinstance(v, str):
+        return parse_invoice(v)
+    if isinstance(v, date):
+        return v.replace(day=1)
+    return v
+
+
 CategorySource = Literal["llm", "manual"]
 
 
@@ -57,14 +65,7 @@ class Transaction(ParsedItem):
     def _blank_note(cls, v: object) -> object:
         return (v.strip() or None) if isinstance(v, str) else v
 
-    @field_validator("invoice", mode="before")
-    @classmethod
-    def _first_day(cls, v: object) -> object:
-        if isinstance(v, str):
-            return parse_invoice(v)
-        if isinstance(v, date):
-            return v.replace(day=1)
-        return v
+    _invoice = field_validator("invoice", mode="before")(_first_day_of_month)
 
 
 class StoredTransaction(Transaction):
@@ -82,7 +83,41 @@ class TransactionUpdate(BaseModel):
     invoice: dt.date | None = None
     note: str | None = None
 
-    @field_validator("invoice", mode="before")
+    _invoice = field_validator("invoice", mode="before")(_first_day_of_month)
+
+
+class PaymentIn(BaseModel):
+    """Valor puxado de uma caixinha para pagar a fatura."""
+
+    invoice: date
+    source: str
+    category: Category
+    amount: Decimal
+    paid_at: dt.date = Field(default_factory=dt.date.today)
+    note: str | None = None
+
+    _invoice = field_validator("invoice", mode="before")(_first_day_of_month)
+
+    @field_validator("amount", mode="before")
     @classmethod
-    def _first_day(cls, v: object) -> object:
-        return parse_invoice(v) if isinstance(v, str) else v
+    def _round(cls, v: object) -> Decimal:
+        return Decimal(str(v)).quantize(Decimal("0.01"))
+
+
+class Payment(PaymentIn):
+    id: int
+
+
+class CategoryBalance(BaseModel):
+    category: Category
+    total: Decimal  # devido (soma dos lançamentos)
+    paid: Decimal
+    remaining: Decimal
+
+
+class InvoiceSummary(BaseModel):
+    invoice: str  # AAAA-MM
+    categories: list[CategoryBalance]
+    total: Decimal
+    paid: Decimal
+    remaining: Decimal

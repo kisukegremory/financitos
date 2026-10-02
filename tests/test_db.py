@@ -43,10 +43,31 @@ def test_list_roundtrip_and_filters(conn):
 
 def test_summary_by_category(conn):
     db.save(conn, [tx("A", "10.50"), tx("B", "5.25"), tx("C", "3.00", "Saúde")])
-    assert db.summary(conn, INVOICE) == {
-        Category.MERCADO: Decimal("15.75"),
-        Category.SAUDE: Decimal("3.00"),
-    }
+    s = db.summary(conn, INVOICE)
+    assert [(c.category, c.total) for c in s.categories] == [
+        (Category.MERCADO, Decimal("15.75")),
+        (Category.SAUDE, Decimal("3.00")),
+    ]
+    assert s.total == s.remaining == Decimal("18.75")
+
+
+def test_early_payment_then_new_transactions(conn):
+    db.save(conn, [tx("A", "100.00"), tx("B", "20.00", "Saúde")])
+    paid = db.pay_remaining(conn, INVOICE, "PicPay")
+    assert sum(p.amount for p in paid) == Decimal("120.00")
+    assert db.summary(conn, INVOICE).remaining == 0
+
+    # fatura ainda aberta: entra uma compra nova depois do pagamento antecipado
+    db.save(conn, [tx("C", "30.00", day=20)])
+    s = db.summary(conn, INVOICE)
+    mercado = next(c for c in s.categories if c.category is Category.MERCADO)
+    assert (mercado.total, mercado.paid, mercado.remaining) == (
+        Decimal("130.00"),
+        Decimal("100.00"),
+        Decimal("30.00"),
+    )
+    assert [p.amount for p in db.pay_remaining(conn, INVOICE, "PicPay")] == [Decimal("30.00")]
+    assert db.pay_remaining(conn, INVOICE, "PicPay") == []
 
 
 def test_update_category_marks_manual_and_keeps_identical_rows_apart(conn):

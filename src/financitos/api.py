@@ -2,6 +2,7 @@ import os
 import secrets
 import sqlite3
 from collections.abc import Iterator
+from datetime import date
 from decimal import Decimal
 from pathlib import Path as FsPath
 from typing import Annotated
@@ -16,6 +17,9 @@ from financitos.config import Settings, get_settings
 from financitos.llm import Categorizer
 from financitos.models import (
     Category,
+    InvoiceSummary,
+    Payment,
+    PaymentIn,
     StoredTransaction,
     Transaction,
     TransactionUpdate,
@@ -71,20 +75,14 @@ class ParseResponse(BaseModel):
     skipped: int | None = None
 
 
-class CategoryTotal(BaseModel):
-    category: Category
-    total: Decimal
-
-
 class BulkResult(BaseModel):
     inserted: int
     skipped: int
 
 
-class Summary(BaseModel):
-    invoice: str
-    categories: list[CategoryTotal]
-    total: Decimal
+class PayRequest(BaseModel):
+    source: str = Field(examples=["PicPay"])
+    paid_at: date | None = None
 
 
 def _not_found(id: int) -> HTTPException:
@@ -164,13 +162,36 @@ def delete_transaction(id: int, conn: Conn) -> None:
 @router.get("/invoices/{invoice}/summary")
 def invoice_summary(
     invoice: Annotated[str, Path(pattern=INVOICE_PATTERN)], conn: Conn, source: str | None = None
-) -> Summary:
-    totals = db.summary(conn, parse_invoice(invoice), source)
-    return Summary(
-        invoice=invoice,
-        categories=[CategoryTotal(category=c, total=v) for c, v in totals.items()],
-        total=sum(totals.values(), start=Decimal(0)),
-    )
+) -> InvoiceSummary:
+    return db.summary(conn, parse_invoice(invoice), source)
+
+
+@router.post("/invoices/{invoice}/pay", status_code=status.HTTP_201_CREATED)
+def pay_invoice(
+    invoice: Annotated[str, Path(pattern=INVOICE_PATTERN)], req: PayRequest, conn: Conn
+) -> list[Payment]:
+    """Paga o que falta de cada caixinha (pagamento antecipado ou complemento)."""
+    return db.pay_remaining(conn, parse_invoice(invoice), req.source, req.paid_at)
+
+
+@router.get("/payments")
+def list_payments(
+    conn: Conn,
+    invoice: Annotated[str | None, Query(pattern=INVOICE_PATTERN)] = None,
+    source: str | None = None,
+) -> list[Payment]:
+    return db.list_payments(conn, parse_invoice(invoice) if invoice else None, source)
+
+
+@router.post("/payments", status_code=status.HTTP_201_CREATED)
+def create_payment(p: PaymentIn, conn: Conn) -> Payment:
+    return db.add_payment(conn, p)
+
+
+@router.delete("/payments/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_payment(id: int, conn: Conn) -> None:
+    if not db.delete_payment(conn, id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"pagamento {id} não encontrado")
 
 
 app.include_router(router)

@@ -92,18 +92,41 @@ def summary(
     invoice: Annotated[str, typer.Option("--invoice", "-i", help="AAAA-MM")],
     source: Annotated[str | None, typer.Option("--source", "-s")] = None,
 ) -> None:
-    """Total por caixinha de uma fatura (quanto tirar de cada uma)."""
+    """Devido, pago e o que falta por caixinha numa fatura."""
     with closing(db.connect(get_settings().database_url)) as conn:
-        totals = db.summary(conn, parse_invoice(invoice), source)
-    if not totals:
+        s = db.summary(conn, parse_invoice(invoice), source)
+    if not s.categories:
         typer.echo("nenhum lançamento encontrado", err=True)
         raise typer.Exit(1)
-    width = max(len(c.value) for c in totals)
-    for category, amount in totals.items():
-        typer.echo(f"{category.value:<{width}}  R$ {format_amount(amount):>10}")
-    typer.echo(
-        f"{'Total':<{width}}  R$ {format_amount(sum(totals.values(), start=Decimal(0))):>10}"
-    )
+    rows = [(c.category.value, c.total, c.paid, c.remaining) for c in s.categories]
+    rows.append(("Total", s.total, s.paid, s.remaining))
+    width = max(len(r[0]) for r in rows)
+    typer.echo(f"{'Caixinha':<{width}}  {'Devido':>12}  {'Pago':>12}  {'Falta':>12}")
+    for name, *values in rows:
+        cols = "  ".join(f"{format_amount(v):>12}" for v in values)
+        typer.echo(f"{name:<{width}}  {cols}")
+
+
+@app.command()
+def pay(
+    invoice: Annotated[str, typer.Option("--invoice", "-i", help="AAAA-MM")],
+    source: Annotated[str, typer.Option("--source", "-s")],
+    paid_at: Annotated[
+        str | None,
+        typer.Option("--date", "-d", help="Data do pagamento (AAAA-MM-DD, padrão: hoje)"),
+    ] = None,
+) -> None:
+    """Registra o pagamento do que falta em cada caixinha (vale para antecipado)."""
+    when = date.fromisoformat(paid_at) if paid_at else None
+    with closing(db.connect(get_settings().database_url)) as conn:
+        payments = db.pay_remaining(conn, parse_invoice(invoice), source, when)
+    if not payments:
+        typer.echo("nada a pagar: a fatura já está quitada", err=True)
+        return
+    for p in payments:
+        typer.echo(f"{p.category.value}: R$ {format_amount(p.amount)}")
+    total = sum((p.amount for p in payments), start=Decimal(0))
+    typer.echo(f"pago: R$ {format_amount(total)}", err=True)
 
 
 def print_total(transactions: list[Transaction]) -> None:

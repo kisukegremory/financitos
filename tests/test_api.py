@@ -42,7 +42,17 @@ def test_parse_save_and_summary(client):
     assert resp["inserted"] == 1 and resp["total"] == "42.90"
 
     summary = client.get("/api/invoices/2026-10/summary").json()
-    assert summary["categories"] == [{"category": "Mercado", "total": "42.90"}]
+    assert summary["categories"] == [
+        {"category": "Mercado", "total": "42.90", "paid": "0.00", "remaining": "42.90"}
+    ]
+
+    paid = client.post("/api/invoices/2026-10/pay", json={"source": "PicPay"}).json()
+    assert [p["amount"] for p in paid] == ["42.90"]
+    assert client.get("/api/invoices/2026-10/summary").json()["remaining"] == "0.00"
+
+    (payment,) = client.get("/api/payments", params={"invoice": "2026-10"}).json()
+    assert client.delete(f"/api/payments/{payment['id']}").status_code == 204
+    assert client.get("/api/invoices/2026-10/summary").json()["remaining"] == "42.90"
 
 
 def test_crud(client):

@@ -90,3 +90,16 @@ input.note {
   border-color: transparent;
 }
 input.note:hover, input.note:focus { border-color: var(--border); background: var(--bg); }
+
+.card small { color: var(--muted); font-size: 0.75rem; }
+.done { color: var(--accent) !important; }
+section.pay { align-items: flex-end; }
+section.pay.row.spread { margin-bottom: 1rem; }
+details.payments {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+details.payments summary { cursor: pointer; font-weight: 600; margin-bottom: 0.5rem; }
