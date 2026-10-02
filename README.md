@@ -66,6 +66,10 @@ docker compose up -d --build
 ```
 
 Abra **http://financitos.localhost** (UI). A API fica em `/api` e a documentação interativa em `/docs`.
+Telas: **Fatura** (devido/pago/falta por caixinha, pagar o que falta, saldo após pagar, editar caixinha e comentário, copiar TSV),
+**Importar** (prompt para o assistente do banco → colar fatura → categorizar → revisar → salvar) e
+**Caixinhas** (saldo atual de cada uma).
+
 O Traefik é a porta de entrada (porta 80, só na sua máquina) e encaminha para o container da app.
 `*.localhost` já aponta para a própria máquina nos navegadores, então não precisa mexer em `/etc/hosts`.
 
@@ -83,6 +87,7 @@ uv run financitos parse -s PicPay -i 2026-10 data/fatura.txt --save   # mostra e
 uv run financitos list -i 2026-10 [-s PicPay] [-c Mercado]
 uv run financitos summary -i 2026-10                                  # devido × pago × falta por caixinha
 uv run financitos pay -s PicPay -i 2026-10 [-d 2026-10-02]             # paga o que falta (vale antecipado)
+uv run financitos balances [--set Mercado 1.500,00]                    # saldo das caixinhas
 ```
 
 Também funciona via Docker: `docker compose run --rm -T cli parse -s PicPay -i 2026-10 --save < data/fatura.txt`.
@@ -112,6 +117,8 @@ Abra **http://dev.financitos.localhost**: a UI recarrega a cada alteração em `
 | POST | `/api/invoices/{AAAA-MM}/pay` | `{source, paid_at}` → paga o que falta em cada caixinha |
 | GET/POST | `/api/payments` | Lista / registra um pagamento avulso (caixinha + valor) |
 | DELETE | `/api/payments/{id}` | Desfaz um pagamento |
+| GET | `/api/balances` | Saldo atual de cada caixinha |
+| PUT | `/api/balances/{caixinha}` | `{amount}` → atualiza o saldo |
 
 Se `API_TOKEN` estiver definido no `.env`, todas as rotas (exceto `/api/health`) exigem `Authorization: Bearer <token>`.
 Datas trafegam em ISO (`2026-09-15`), valores como string decimal (`"42.90"`).

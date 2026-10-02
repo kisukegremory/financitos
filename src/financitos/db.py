@@ -7,6 +7,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from financitos.models import (
+    Balance,
     Category,
     CategoryBalance,
     InvoiceSummary,
@@ -47,6 +48,13 @@ CREATE TABLE IF NOT EXISTS payments (
     created_at   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 CREATE INDEX IF NOT EXISTS ix_payments_invoice ON payments (invoice, source);
+
+-- Saldo atual de cada caixinha (informado manualmente)
+CREATE TABLE IF NOT EXISTS balances (
+    category     TEXT    PRIMARY KEY,
+    amount_cents INTEGER NOT NULL DEFAULT 0,
+    updated_at   TEXT  -- NULL = nunca informado
+);
 """
 
 # Colunas adicionadas depois da criação da tabela: (nome, definição)
@@ -75,7 +83,16 @@ def connect(url: str) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
     _migrate(conn)
+    _seed_balances(conn)
     return conn
+
+
+def _seed_balances(conn: sqlite3.Connection) -> None:
+    """Garante uma linha (zerada) por caixinha, inclusive caixinhas novas no enum."""
+    with conn:
+        conn.executemany(
+            "INSERT OR IGNORE INTO balances (category) VALUES (?)", [(c.value,) for c in Category]
+        )
 
 
 def _migrate(conn: sqlite3.Connection) -> None:
@@ -330,3 +347,35 @@ def list_payments(
 def delete_payment(conn: sqlite3.Connection, id: int) -> bool:
     with conn:
         return conn.execute("DELETE FROM payments WHERE id = ?", (id,)).rowcount > 0
+
+
+# --- saldos das caixinhas ---
+
+
+def list_balances(conn: sqlite3.Connection) -> list[Balance]:
+    order = {c.value: i for i, c in enumerate(Category)}
+    rows = conn.execute("SELECT * FROM balances").fetchall()
+    return sorted(
+        (
+            Balance(
+                category=Category(r["category"]),
+                amount=_from_cents(r["amount_cents"]),
+                updated_at=r["updated_at"],
+            )
+            for r in rows
+            if r["category"] in order  # ignora caixinhas removidas do enum
+        ),
+        key=lambda b: order[b.category.value],
+    )
+
+
+def set_balance(conn: sqlite3.Connection, category: Category, amount: Decimal) -> Balance:
+    with conn:
+        conn.execute(
+            "INSERT INTO balances (category, amount_cents, updated_at)"
+            " VALUES (?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))"
+            " ON CONFLICT (category) DO UPDATE SET amount_cents = excluded.amount_cents,"
+            " updated_at = excluded.updated_at",
+            (category.value, _cents(amount)),
+        )
+    return next(b for b in list_balances(conn) if b.category is category)

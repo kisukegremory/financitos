@@ -23,3 +23,14 @@ export function toTSV(items) {
   ])
   return [header, ...rows].map((r) => r.join('\t')).join('\n')
 }
+
+// '1.500,00' | '1500,00' | '1500.00' -> '1500.00' (string decimal para a API); null se inválido
+export function parseMoney(raw) {
+  let v = String(raw).replace(/[R$\s]/g, '')
+  if (v.includes(',')) v = v.replace(/\./g, '').replace(',', '.')
+  return v !== '' && !Number.isNaN(Number(v)) ? Number(v).toFixed(2) : null
+}
+
+// valor para exibir num input editável: '1500.00' -> '1.500,00'
+export const moneyInput = (v) =>
+  Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })

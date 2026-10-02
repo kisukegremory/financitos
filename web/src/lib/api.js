@@ -35,6 +35,9 @@ export const api = {
     request('POST', `/invoices/${invoice}/pay`, { source, paid_at: paid_at || null }),
   payments: (params) => request('GET', `/payments?${new URLSearchParams(clean(params))}`),
   removePayment: (id) => request('DELETE', `/payments/${id}`),
+  balances: () => request('GET', '/balances'),
+  setBalance: (category, amount) =>
+    request('PUT', `/balances/${encodeURIComponent(category)}`, { amount }),
   summary: (invoice, source) =>
     request('GET', `/invoices/${invoice}/summary?${new URLSearchParams(clean({ source }))}`),
 }

@@ -1,6 +1,7 @@
 <script>
   import { api } from './lib/api.js'
   import { currentMonth } from './lib/format.js'
+  import BalancesView from './lib/BalancesView.svelte'
   import ImportView from './lib/ImportView.svelte'
   import InvoiceView from './lib/InvoiceView.svelte'
 
@@ -21,12 +22,15 @@
   <nav>
     <button class:active={tab === 'invoice'} onclick={() => (tab = 'invoice')}>Fatura</button>
     <button class:active={tab === 'import'} onclick={() => (tab = 'import')}>Importar</button>
+    <button class:active={tab === 'balances'} onclick={() => (tab = 'balances')}>Caixinhas</button>
   </nav>
 </header>
 
 <main>
   {#if tab === 'import'}
     <ImportView {categories} {onsaved} />
+  {:else if tab === 'balances'}
+    <BalancesView />
   {:else}
     <InvoiceView {categories} bind:invoice />
   {/if}

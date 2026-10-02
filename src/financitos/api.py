@@ -16,6 +16,8 @@ from financitos import db
 from financitos.config import Settings, get_settings
 from financitos.llm import Categorizer
 from financitos.models import (
+    Balance,
+    BalanceIn,
     Category,
     InvoiceSummary,
     Payment,
@@ -192,6 +194,16 @@ def create_payment(p: PaymentIn, conn: Conn) -> Payment:
 def delete_payment(id: int, conn: Conn) -> None:
     if not db.delete_payment(conn, id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"pagamento {id} não encontrado")
+
+
+@router.get("/balances")
+def list_balances(conn: Conn) -> list[Balance]:
+    return db.list_balances(conn)
+
+
+@router.put("/balances/{category}")
+def set_balance(category: Category, body: BalanceIn, conn: Conn) -> Balance:
+    return db.set_balance(conn, category, body.amount)
 
 
 app.include_router(router)

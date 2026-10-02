@@ -83,3 +83,10 @@ def test_bulk_keeps_manual_category_source(client):
     item = {**ITEM, "source": "PicPay", "invoice": "2026-10", "category_source": "manual"}
     client.post("/api/transactions/bulk", json=[item])
     assert client.get("/api/transactions").json()[0]["category_source"] == "manual"
+
+
+def test_balances(client):
+    assert len(client.get("/api/balances").json()) == 10
+    resp = client.put("/api/balances/Higiene e Estética", json={"amount": "250.5"}).json()
+    assert resp["amount"] == "250.50"
+    assert client.put("/api/balances/Lazer", json={"amount": 1}).status_code == 422

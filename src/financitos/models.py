@@ -121,3 +121,20 @@ class InvoiceSummary(BaseModel):
     total: Decimal
     paid: Decimal
     remaining: Decimal
+
+
+class Balance(BaseModel):
+    """Saldo atual de uma caixinha (informado por mim)."""
+
+    category: Category
+    amount: Decimal
+    updated_at: str | None = None  # ISO 8601 UTC; None = nunca informado
+
+
+class BalanceIn(BaseModel):
+    amount: Decimal
+
+    @field_validator("amount", mode="before")
+    @classmethod
+    def _round(cls, v: object) -> Decimal:
+        return Decimal(str(v)).quantize(Decimal("0.01"))

@@ -109,3 +109,13 @@ def test_migrates_old_database_without_note(tmp_path):
     c = db.connect(f"sqlite:///{path}")
     assert "note" in {r["name"] for r in c.execute("PRAGMA table_info(transactions)")}
     c.close()
+
+
+def test_balances_start_zeroed_and_update(conn):
+    balances = db.list_balances(conn)
+    assert [b.category for b in balances] == list(Category)
+    assert all(b.amount == 0 and b.updated_at is None for b in balances)
+
+    updated = db.set_balance(conn, Category.MERCADO, Decimal("1500.00"))
+    assert updated.amount == Decimal("1500.00") and updated.updated_at
+    assert db.set_balance(conn, Category.MERCADO, Decimal("1200.50")).amount == Decimal("1200.50")

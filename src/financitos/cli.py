@@ -129,6 +129,37 @@ def pay(
     typer.echo(f"pago: R$ {format_amount(total)}", err=True)
 
 
+@app.command()
+def balances(
+    set_: Annotated[
+        tuple[Category, str] | None,
+        typer.Option("--set", help='Atualiza um saldo: --set "Mercado" 1500,00'),
+    ] = None,
+) -> None:
+    """Mostra (ou atualiza) o saldo atual de cada caixinha."""
+    with closing(db.connect(get_settings().database_url)) as conn:
+        if set_:
+            category, raw = set_
+            db.set_balance(conn, category, parse_amount(raw))
+        rows = db.list_balances(conn)
+    width = max(len(b.category.value) for b in rows)
+    for b in rows:
+        when = b.updated_at[:10] if b.updated_at else "nunca informado"
+        typer.echo(f"{b.category.value:<{width}}  R$ {format_amount(b.amount):>12}  ({when})")
+    total = sum((b.amount for b in rows), start=Decimal(0))
+    typer.echo(f"{'Total':<{width}}  R$ {format_amount(total):>12}")
+
+
+def parse_amount(raw: str) -> Decimal:
+    """Aceita '1.500,00', '1500,00' e '1500.00'."""
+    if "," in raw:
+        raw = raw.replace(".", "").replace(",", ".")
+    try:
+        return Decimal(raw)
+    except ArithmeticError as e:
+        raise typer.BadParameter(f"valor inválido: {raw}") from e
+
+
 def print_total(transactions: list[Transaction]) -> None:
     total = sum((t.amount for t in transactions), start=Decimal(0))
     typer.echo(f"\n{len(transactions)} lançamentos · total R$ {format_amount(total)}", err=True)

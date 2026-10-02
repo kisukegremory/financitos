@@ -10,6 +10,7 @@
   let items = $state([])
   let summary = $state(null)
   let payments = $state([])
+  let balances = $state({}) // categoria -> saldo atual
   let paidAt = $state(new Date().toISOString().slice(0, 10))
   let message = $state('')
 
@@ -21,6 +22,7 @@
         api.summary(invoice, source),
         api.payments({ invoice, source }),
       ])
+      balances = Object.fromEntries((await api.balances()).map((b) => [b.category, b]))
     } catch (e) {
       message = `Erro: ${e.message}`
     }
@@ -98,6 +100,12 @@
         {#if Number(c.paid)}
           <small class:done={Number(c.remaining) === 0}>
             {Number(c.remaining) === 0 ? '✓ pago' : `falta ${money(c.remaining)}`}
+          </small>
+        {/if}
+        {#if balances[c.category]?.updated_at && Number(c.remaining) > 0}
+          {@const after = Number(balances[c.category].amount) - Number(c.remaining)}
+          <small class:negative-balance={after < 0} title="Saldo atual menos o que falta pagar">
+            saldo após pagar {money(after)}
           </small>
         {/if}
       </button>

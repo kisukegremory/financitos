@@ -103,3 +103,15 @@ details.payments {
   margin-bottom: 1rem;
 }
 details.payments summary { cursor: pointer; font-weight: 600; margin-bottom: 0.5rem; }
+
+.negative-balance { color: var(--danger) !important; }
+.card.balance { cursor: text; }
+.money-input { display: flex; align-items: center; gap: 0.35rem; font-weight: 600; }
+.money-input input {
+  width: 100%;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  padding: 0.25rem 0.4rem;
+}
