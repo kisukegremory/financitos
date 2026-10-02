@@ -65,10 +65,19 @@ cp .env.example .env   # e preencha OPENROUTER_API_KEY
 
 ```bash
 uv sync
-uv run financitos parse --source picpay --invoice 2026-10 fatura.txt
-# ou via stdin
-pbpaste | uv run financitos parse --source nubank --invoice 2026-10
+uv run financitos parse --source picpay --invoice 2026-10 data/fatura.txt
+# ou via stdin (ex.: área de transferência no Linux)
+xclip -o -sel clip | uv run financitos parse --source nubank --invoice 2026-10
+
+# salvar no SQLite (reimportar a mesma fatura não duplica)
+uv run financitos parse -s PicPay -i 2026-10 data/fatura.txt --save
+
+# consultar
+uv run financitos list -i 2026-10 [-s PicPay] [-c Mercado]
+uv run financitos summary -i 2026-10   # total por caixinha
 ```
+
+> Guarde as faturas em `data/` ou `inbox/` — ambos (e `*.txt`) são ignorados pelo git.
 
 ### Docker
 

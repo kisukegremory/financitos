@@ -27,7 +27,9 @@ coverage.xml
 htmlcov/
 
 # --- Dados locais (SQLite, exports, faturas) ---
-data/
+# data/ é versionada vazia para não ser criada como root pelo volume do Docker
+data/*
+!data/.gitkeep
 inbox/
 *.txt
 *.db
