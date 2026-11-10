@@ -374,3 +374,34 @@ def set_balance(conn: sqlite3.Connection, category: Category, amount: Decimal) -
             (category.value, _cents(amount)),
         )
     return next(b for b in list_balances(conn) if b.category is category)
+
+
+# --- histórico de categorização ---
+
+
+def known_categories(
+    conn: sqlite3.Connection, descriptions: Iterable[str], source: str | None = None
+) -> dict[str, Category]:
+    """Caixinha já usada para cada descrição (correções manuais têm prioridade,
+    depois a mais recente). Evita mandar para a LLM o que já foi decidido."""
+    descs = list(set(descriptions))
+    if not descs:
+        return {}
+    marks = ", ".join("?" * len(descs))
+    params: list = list(descs)
+    source_clause = ""
+    if source:
+        source_clause = " AND source = ? COLLATE NOCASE"
+        params.append(source)
+    rows = conn.execute(
+        f"SELECT description, category FROM fin_transactions"
+        f" WHERE description IN ({marks}){source_clause}"
+        " ORDER BY (category_source = 'manual') DESC, date DESC, id DESC",
+        params,
+    ).fetchall()
+    order = {c.value for c in Category}
+    found: dict[str, Category] = {}
+    for r in rows:
+        if r["category"] in order:
+            found.setdefault(r["description"], Category(r["category"]))
+    return found

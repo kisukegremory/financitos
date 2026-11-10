@@ -8,7 +8,7 @@ from typing import Annotated
 
 import typer
 
-from home.apps.financitos import db, models
+from home.apps.financitos import csv_import, db, models
 from home.apps.financitos.llm import Categorizer
 from home.apps.financitos.models import Category, Transaction
 from home.apps.financitos.output import format_amount, render
@@ -61,6 +61,43 @@ def parse(
         with closing(conn):
             result = db.save(conn, transactions)
         typer.echo(f"salvos: {result.inserted} · duplicados ignorados: {result.skipped}", err=True)
+
+
+@app.command("import-csv")
+def import_csv(
+    files: Annotated[list[Path], typer.Argument(help="CSVs do Nubank (Nubank_AAAA-MM-DD.csv)")],
+    source: Annotated[str, typer.Option("--source", "-s")] = "Nubank",
+    invoice: Annotated[
+        str | None, typer.Option("--invoice", "-i", help="AAAA-MM (padrão: tirado do nome)")
+    ] = None,
+    fmt: Annotated[OutputFormat, typer.Option("--format", "-f")] = OutputFormat.TSV,
+    no_header: Annotated[bool, typer.Option("--no-header")] = False,
+    save: Annotated[bool, typer.Option("--save", help="Salva os lançamentos no SQLite")] = False,
+) -> None:
+    """Importa CSVs do Nubank em lote: caixinhas do histórico + LLM só para o inédito."""
+    batches = []
+    for f in files:
+        inv = invoice or csv_import.invoice_from_filename(f.name)
+        if not inv:
+            raise typer.BadParameter(f"{f.name}: use --invoice, não deu para tirar do nome")
+        try:
+            batches.append((parse_invoice(inv), csv_import.parse_nubank(f.read_text())))
+        except csv_import.CsvError as e:
+            raise typer.BadParameter(f"{f.name}: {e}") from e
+
+    rows = [r for _, rs in batches for r in rs]
+    with closing(db.connect(get_settings().database_url)) as conn:
+        known = db.known_categories(conn, (r.description for r in rows), source)
+        categories, from_llm = csv_import.categorize(rows, known, Categorizer(get_settings()))
+        transactions = csv_import.to_transactions(batches, categories, source)
+        typer.echo(render(transactions, fmt.value, header=not no_header), nl=False)
+        print_total(transactions)
+        typer.echo(f"caixinhas: {len(known)} do histórico · {from_llm} pela LLM", err=True)
+        if save:
+            result = db.save(conn, transactions)
+            typer.echo(
+                f"salvos: {result.inserted} · duplicados ignorados: {result.skipped}", err=True
+            )
 
 
 @app.command("list")

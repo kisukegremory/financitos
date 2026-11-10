@@ -122,3 +122,38 @@ def test_spa_fallback(tmp_path):
     assert c.get("/logo.svg").text == "<svg/>"
     assert c.get("/../pyproject.toml").text == "<html>spa</html>"
     assert c.get("/api/nope").status_code == 404
+
+
+def test_import_csv(client):
+    reply = json.dumps({"items": [{"i": 0, "category": "Mercado"}]})
+    app.dependency_overrides[get_categorizer] = lambda: Categorizer(
+        get_settings(), client=fake_client(reply)
+    )
+    body = {
+        "files": [
+            {
+                "name": "Nubank_2026-12-16.csv",
+                "content": 'date,title,amount\n2026-11-10,SONDA,"42,90"\n',
+            },
+            {
+                "name": "x.csv",
+                "invoice": "2026-11",
+                "content": 'date,title,amount\n2026-10-01,SONDA,"1,00"\n',
+            },
+        ],
+        "save": True,
+    }
+    resp = client.post("/api/financitos/import/csv", json=body).json()
+    assert resp["inserted"] == 2 and resp["from_llm"] == 1 and resp["total"] == "43.90"
+    assert [(t["invoice"], t["category"], t["source"]) for t in resp["items"]] == [
+        ("2026-12-01", "Mercado", "Nubank"),
+        ("2026-11-01", "Mercado", "Nubank"),
+    ]
+    # reimportar: caixinha vem do histórico (sem LLM) e nada é duplicado
+    again = client.post("/api/financitos/import/csv", json=body).json()
+    assert again["from_llm"] == 0 and again["from_history"] == 1 and again["skipped"] == 2
+
+
+def test_import_csv_needs_invoice(client):
+    body = {"files": [{"name": "fatura.csv", "content": "date,title,amount\n"}]}
+    assert client.post("/api/financitos/import/csv", json=body).status_code == 422

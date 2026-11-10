@@ -1,6 +1,8 @@
 from datetime import date
+from decimal import Decimal
 
 from openai import OpenAI
+from pydantic import BaseModel
 
 from home.apps.financitos.models import Category, ParsedItems
 from home.core.config import Settings
@@ -30,9 +32,42 @@ def build_messages(text: str, invoice: date) -> list[dict[str, str]]:
     ]
 
 
+CATEGORIZE_PROMPT = """Você classifica lançamentos de fatura de cartão de crédito brasileira.
+Receberá uma lista numerada de descrições (com o valor, para contexto).
+Para cada uma, escolha exatamente uma destas caixinhas: {categories}
+
+Responda APENAS com JSON no formato: {{"items": [{{"i": 0, "category": "..."}}]}}
+Inclua todos os índices recebidos."""
+
+
+class Categorized(BaseModel):
+    i: int
+    category: Category
+
+
+class CategorizedItems(BaseModel):
+    items: list[Categorized]
+
+
+def build_categorize_messages(entries: list[tuple[str, Decimal]]) -> list[dict[str, str]]:
+    categories = ", ".join(c.value for c in Category)
+    lines = "\n".join(f"{i}. {desc} (R$ {amount})" for i, (desc, amount) in enumerate(entries))
+    return [
+        {"role": "system", "content": CATEGORIZE_PROMPT.format(categories=categories)},
+        {"role": "user", "content": lines},
+    ]
+
+
 class Categorizer:
     def __init__(self, settings: Settings, client: OpenAI | None = None):
         self.llm = LLM(settings, client)
 
     def parse(self, text: str, invoice: date) -> ParsedItems:
         return self.llm.complete_json(build_messages(text, invoice), ParsedItems)
+
+    def categorize(self, entries: list[tuple[str, Decimal]]) -> dict[str, Category]:
+        """Caixinha por descrição, numa única chamada. Descrições sem resposta ficam de fora."""
+        if not entries:
+            return {}
+        result = self.llm.complete_json(build_categorize_messages(entries), CategorizedItems)
+        return {entries[c.i][0]: c.category for c in result.items if 0 <= c.i < len(entries)}

@@ -114,6 +114,7 @@ docker compose down          # parar
 uv sync
 uv run home financitos parse -s PicPay -i 2026-10 data/fatura.txt          # só mostra (TSV)
 uv run home financitos parse -s PicPay -i 2026-10 data/fatura.txt --save   # mostra e salva
+uv run home financitos import-csv ~/Downloads/Nubank_*.csv [--save]   # CSVs do Nubank em lote (fatura pelo nome)
 uv run home financitos list -i 2026-10 [-s PicPay] [-c Mercado]
 uv run home financitos summary -i 2026-10                                  # devido × pago × falta por caixinha
 uv run home financitos pay -s PicPay -i 2026-10 [-d 2026-10-02]             # paga o que falta (vale antecipado)
@@ -139,6 +140,7 @@ Abra **http://dev.home.localhost**: a UI recarrega a cada alteração em `web/` 
 | GET | `/api/health` | Status (sem token) |
 | GET | `/api/financitos/categories` | Lista de caixinhas |
 | POST | `/api/financitos/parse` | `{text, source, invoice, save}` → lançamentos categorizados |
+| POST | `/api/financitos/import/csv` | `{files: [{name, content, invoice?}], source, save}` → CSVs do Nubank; caixinha do histórico ou de 1 chamada à LLM |
 | GET | `/api/financitos/transactions?invoice=&source=&category=` | Lista |
 | POST | `/api/financitos/transactions` | Cria manualmente |
 | POST | `/api/financitos/transactions/bulk` | Salva vários (ignora duplicatas) |

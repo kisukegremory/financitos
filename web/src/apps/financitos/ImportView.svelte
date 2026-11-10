@@ -13,6 +13,8 @@
   let loading = $state(false)
   let message = $state('')
 
+  let csvFiles = $state([]) // [{ name, content, invoice }]
+
   const total = $derived(items.reduce((s, t) => s + Number(t.amount), 0))
 
   async function categorize() {
@@ -27,12 +29,41 @@
     }
   }
 
+  // Nubank_2026-12-16.csv -> 2026-12 (mês do vencimento)
+  const invoiceFromName = (name) => name.match(/(\d{4}-\d{2})-\d{2}/)?.[1] ?? ''
+
+  async function pickFiles(e) {
+    csvFiles = await Promise.all(
+      [...e.target.files].map(async (f) => ({
+        name: f.name,
+        content: await f.text(),
+        invoice: invoiceFromName(f.name),
+      })),
+    )
+  }
+
+  async function importCsv() {
+    loading = true
+    message = ''
+    try {
+      const r = await api.importCsv(csvFiles, 'Nubank')
+      items = r.items
+      message = `Caixinhas: ${r.from_history} do histórico · ${r.from_llm} pela LLM`
+    } catch (e) {
+      message = `Erro: ${e.message}`
+    } finally {
+      loading = false
+    }
+  }
+
   async function save() {
     const r = await api.saveBulk(items)
     message = `Salvos: ${r.inserted} · duplicados ignorados: ${r.skipped}`
+    const latest = items.map((t) => t.invoice.slice(0, 7)).sort().at(-1) ?? invoice
     items = []
     text = ''
-    onsaved?.(invoice)
+    csvFiles = []
+    onsaved?.(latest)
   }
 
   const prompt = $derived(bankPrompt(invoice.split('-').reverse().join('/')))
@@ -59,6 +90,30 @@
 </details>
 
 <section>
+  <strong>Arquivos CSV (Nubank)</strong>
+  <p class="muted">
+    Selecione um ou mais CSVs exportados. A fatura vem do nome do arquivo; caixinhas já usadas
+    antes são reaproveitadas e só o que é novo vai para a LLM, numa chamada só.
+  </p>
+  <div class="row">
+    <input type="file" accept=".csv,text/csv" multiple onchange={pickFiles} />
+    <button
+      onclick={importCsv}
+      disabled={loading || !csvFiles.length || csvFiles.some((f) => !f.invoice)}
+    >
+      {loading ? 'Categorizando…' : 'Importar CSV'}
+    </button>
+  </div>
+  {#each csvFiles as f (f.name)}
+    <div class="row">
+      <span class="muted">{f.name}</span>
+      <label>Fatura <input type="month" bind:value={f.invoice} /></label>
+    </div>
+  {/each}
+</section>
+
+<section>
+  <strong>Texto colado (PicPay e outros)</strong>
   <div class="row">
     <label>Fonte <input bind:value={source} list="sources" /></label>
     <datalist id="sources"><option>PicPay</option><option>Nubank</option></datalist>

@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from pydantic import BaseModel, Field
 
-from home.apps.financitos import db
+from home.apps.financitos import csv_import, db
 from home.apps.financitos.llm import Categorizer
 from home.apps.financitos.models import (
     Balance,
@@ -53,6 +53,23 @@ class BulkResult(BaseModel):
     skipped: int
 
 
+class CsvFile(BaseModel):
+    name: str = ""
+    content: str = Field(min_length=1)
+    invoice: InvoiceParam | None = None  # padrão: tirado do nome (Nubank_AAAA-MM-DD.csv)
+
+
+class ImportCsvRequest(BaseModel):
+    files: list[CsvFile] = Field(min_length=1)
+    source: str = Field(default="Nubank", examples=["Nubank"])
+    save: bool = False
+
+
+class ImportCsvResponse(ParseResponse):
+    from_history: int  # descrições cuja caixinha veio de lançamentos já salvos
+    from_llm: int  # descrições inéditas enviadas à LLM
+
+
 class PayRequest(BaseModel):
     source: str = Field(examples=["PicPay"])
     paid_at: date | None = None
@@ -77,6 +94,44 @@ def parse(
         Transaction(**i.model_dump(), source=req.source, invoice=invoice) for i in parsed.items
     ]
     resp = ParseResponse(items=items, total=sum((t.amount for t in items), start=Decimal(0)))
+    if req.save:
+        result = db.save(conn, items)
+        resp.inserted, resp.skipped = result.inserted, result.skipped
+    return resp
+
+
+@router.post("/import/csv")
+def import_csv(
+    req: ImportCsvRequest,
+    conn: Conn,
+    categorizer: Annotated[Categorizer, Depends(get_categorizer)],
+) -> ImportCsvResponse:
+    """Importa um ou mais CSVs do Nubank de uma vez. Datas e valores vêm do arquivo;
+    a caixinha vem do histórico e, para descrições inéditas, de uma única chamada à LLM."""
+    batches = []
+    for f in req.files:
+        invoice = f.invoice or csv_import.invoice_from_filename(f.name)
+        if not invoice:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
+                f"{f.name or 'arquivo'}: informe a fatura (AAAA-MM), não deu para tirar do nome",
+            )
+        try:
+            rows = csv_import.parse_nubank(f.content)
+        except csv_import.CsvError as e:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"{f.name}: {e}") from e
+        batches.append((parse_invoice(invoice), rows))
+
+    all_rows = [r for _, rows in batches for r in rows]
+    known = db.known_categories(conn, (r.description for r in all_rows), req.source)
+    categories, from_llm = csv_import.categorize(all_rows, known, categorizer)
+    items = csv_import.to_transactions(batches, categories, req.source)
+    resp = ImportCsvResponse(
+        items=items,
+        total=sum((t.amount for t in items), start=Decimal(0)),
+        from_history=len(known),
+        from_llm=from_llm,
+    )
     if req.save:
         result = db.save(conn, items)
         resp.inserted, resp.skipped = result.inserted, result.skipped

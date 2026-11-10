@@ -5,6 +5,7 @@ const request = (method, path, body) => base(method, `/financitos${path}`, body)
 export const api = {
   categories: () => request('GET', '/categories'),
   parse: (text, source, invoice) => request('POST', '/parse', { text, source, invoice }),
+  importCsv: (files, source) => request('POST', '/import/csv', { files, source }),
   saveBulk: (items) => request('POST', '/transactions/bulk', items),
   list: (params) => request('GET', `/transactions?${query(params)}`),
   update: (id, changes) => request('PUT', `/transactions/${id}`, changes),
