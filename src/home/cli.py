@@ -5,10 +5,12 @@ from typing import Annotated
 import typer
 
 from home.apps.financitos.cli import app as financitos
+from home.apps.medichan.cli import app as medichan
 from home.core.config import get_settings
 
-app = typer.Typer(no_args_is_help=True, help="Monolito pessoal: financitos, tarot...")
+app = typer.Typer(no_args_is_help=True, help="Monolito pessoal: financitos, tarot, medichan...")
 app.add_typer(financitos, name="financitos")
+app.add_typer(medichan, name="medichan")
 
 
 @app.callback()
