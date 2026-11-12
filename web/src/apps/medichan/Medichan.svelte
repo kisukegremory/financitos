@@ -3,6 +3,7 @@
   import { link } from '../../lib/router.svelte.js'
   import { api, samples } from './api.js'
   import CreateView from './CreateView.svelte'
+  import MusicView from './MusicView.svelte'
   import Player from './Player.svelte'
   import { stopPreview } from './preview.svelte.js'
   import VoicesView from './VoicesView.svelte'
@@ -13,10 +14,12 @@
   let examples = $state([])
   let voices = $state([])
   let voice = $state('gemini')
+  let tracks = $state([])
 
   api.list().then((m) => (mine = m))
   api.voices().then((v) => (voices = v))
   samples.list().then((s) => (examples = s))
+  api.tracks().then((t) => (tracks = t))
 
   // "Gemini 3.8 Flash · Sulafat"; ids antigos/desconhecidos aparecem crus
   const voiceName = (id) => {
@@ -60,6 +63,7 @@
         <button class:active={tab === 'create'} onclick={() => go('create')}>Criar</button>
         <button class:active={tab === 'mine'} onclick={() => go('mine')}>Minhas</button>
         <button class:active={tab === 'voices'} onclick={() => go('voices')}>Vozes</button>
+        <button class:active={tab === 'music'} onclick={() => go('music')}>Músicas</button>
         <button class:active={tab === 'samples'} onclick={() => go('samples')}>Exemplos</button>
       </nav>
     {/if}
@@ -71,11 +75,14 @@
         <Player
           meditation={playing}
           voiceName={voiceName(playing.voice)}
+          tracks={tracks.filter((t) => t.status === 'ready')}
           onclose={() => (playing = null)}
         />
       {/key}
     {:else if tab === 'create'}
       <CreateView {voices} bind:voice onready={ready} />
+    {:else if tab === 'music'}
+      <MusicView bind:tracks />
     {:else if tab === 'voices'}
       <VoicesView {voices} onpick={(id) => ((voice = id), go('create'))} />
     {:else}

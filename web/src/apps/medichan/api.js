@@ -7,6 +7,10 @@ export const api = {
   create: (feeling, voice) => request('POST', '/meditations', { feeling, voice }),
   list: () => request('GET', '/meditations'),
   remove: (id) => request('DELETE', `/meditations/${id}`),
+  musicCatalog: () => request('GET', '/music/catalog'),
+  tracks: () => request('GET', '/music'),
+  compose: (body) => request('POST', '/music', body),
+  removeTrack: (id) => request('DELETE', `/music/${id}`),
 }
 
 // exemplos estáticos em web/public/medichan/samples (gerados por `home medichan sample`)
@@ -20,4 +24,9 @@ export async function loadAudio(url) {
   const res = await fetch(url, { headers: url.startsWith('/api') ? authHeaders() : {} })
   if (!res.ok) throw new Error(`áudio indisponível (${res.status})`)
   return res.arrayBuffer()
+}
+
+// URL tocável num <audio> (a rota pode exigir token, então vira blob local)
+export async function audioURL(url) {
+  return URL.createObjectURL(new Blob([await loadAudio(url)], { type: 'audio/mpeg' }))
 }

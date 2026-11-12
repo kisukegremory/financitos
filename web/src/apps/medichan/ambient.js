@@ -123,3 +123,25 @@ export function createAmbient(ctx, seed) {
     },
   }
 }
+
+// Trilha a partir de uma música pronta (Lyria): mesmo contrato do createAmbient
+export function createTrackBed(ctx, buffer, level = 0.45) {
+  const output = ctx.createGain()
+  output.gain.value = 0
+  const src = ctx.createBufferSource()
+  src.buffer = buffer
+  src.loop = true
+  src.connect(output)
+  return {
+    output,
+    start(at, fadeIn = 5) {
+      src.start(at)
+      output.gain.setValueAtTime(0, at)
+      output.gain.linearRampToValueAtTime(level, at + fadeIn)
+    },
+    fadeOut(at, duration = 6) {
+      output.gain.setValueAtTime(level, at)
+      output.gain.linearRampToValueAtTime(0, at + duration)
+    },
+  }
+}

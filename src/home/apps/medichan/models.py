@@ -66,3 +66,36 @@ class VoiceInfo(BaseModel):
     chars_per_sec: float
     estimate_usd: float  # custo estimado de uma meditação típica
     preview: str  # URL da amostra estática
+
+
+class TrackIn(BaseModel):
+    kind: Literal["clip", "pro"] = "clip"
+    preset: str | None = None  # chave de music.PRESETS
+    extra: str | None = Field(default=None, max_length=500)  # descrição livre (em inglês, melhor)
+    title: str | None = Field(default=None, max_length=80)
+
+
+class Track(BaseModel):
+    id: int
+    title: str
+    kind: Literal["clip", "pro"]
+    preset: str | None
+    prompt: str
+    status: Literal["pending", "ready", "error"]
+    error: str | None = None
+    seconds: float | None = None
+    cost_usd: float | None = None
+    audio: str | None = None  # URL quando pronta
+    created_at: str
+
+
+class MusicOption(BaseModel):
+    id: str
+    label: str
+    detail: str
+
+
+class MusicCatalog(BaseModel):
+    presets: list[MusicOption]
+    lengths: list[MusicOption]
+    prices: dict[str, float]

@@ -1,10 +1,21 @@
 <script>
   import { onDestroy } from 'svelte'
   import { usd } from '../../lib/format.js'
-  import { createAmbient, seedFrom } from './ambient.js'
+  import { createAmbient, createTrackBed, seedFrom } from './ambient.js'
   import { loadAudio } from './api.js'
 
-  let { meditation, voiceName, onclose } = $props()
+  let { meditation, voiceName, tracks = [], onclose } = $props()
+
+  // trilha de fundo: 'ambient' (gerada no navegador) ou o id de uma música do Lyria
+  const BED_KEY = 'medichan:bed'
+  // última escolha salva, se a música ainda existir
+  function savedBed() {
+    const saved = localStorage.getItem(BED_KEY)
+    return saved && tracks.some((t) => String(t.id) === saved) ? saved : 'ambient'
+  }
+  let bed = $state(savedBed())
+  let bedBuffer = null
+  let bedLoading = $state(false)
 
   const LEAD = 6 // s só de trilha antes da primeira fala
   const GAP = 1.2 // s entre falas seguidas
@@ -26,7 +37,7 @@
   let t0 = 0
   let raf = 0
 
-  const speechCount = meditation.segments.filter((s) => s.audio).length
+  let speechCount = $derived(meditation.segments.filter((s) => s.audio).length)
 
   async function prepare() {
     const decoder = new AudioContext()
@@ -62,12 +73,33 @@
     total = t + TAIL
   }
 
+  // baixa e decodifica a música escolhida antes de começar
+  $effect(() => {
+    localStorage.setItem(BED_KEY, bed)
+    bedBuffer = null
+    if (bed === 'ambient') return
+    const track = tracks.find((t) => String(t.id) === bed)
+    if (!track) return
+    bedLoading = true
+    const decoder = new AudioContext()
+    loadAudio(track.audio)
+      .then((data) => decoder.decodeAudioData(data))
+      .then((buf) => (bedBuffer = buf))
+      .catch((e) => (error = e.message))
+      .finally(() => {
+        bedLoading = false
+        decoder.close()
+      })
+  })
+
   function start() {
     ctx = new AudioContext()
     t0 = ctx.currentTime + 0.15
 
     // trilha -> ducking (automático) -> volume (usuário) -> saída
-    const ambient = createAmbient(ctx, seedFrom(meditation.title))
+    const ambient = bedBuffer
+      ? createTrackBed(ctx, bedBuffer)
+      : createAmbient(ctx, seedFrom(meditation.title))
     const duck = ctx.createGain()
     musicGain = ctx.createGain()
     musicGain.gain.value = musicVolume
@@ -173,10 +205,19 @@
   <div class="progress"><div style:width="{total ? (elapsed / total) * 100 : 0}%"></div></div>
 
   <div class="row controls">
-    <button disabled={status === 'loading' || !!error} onclick={toggle}>
+    <button disabled={status === 'loading' || bedLoading || !!error} onclick={toggle}>
       {status === 'playing' ? '❚❚ pausar' : status === 'paused' ? '▶ continuar' : status === 'ended' ? '↻ de novo' : '▶ começar'}
     </button>
     <span class="muted time">{clock(elapsed)} / {clock(total)}</span>
+    {#if status === 'ready' || status === 'ended'}
+      <label class="volume">
+        fundo
+        <select bind:value={bed} disabled={bedLoading}>
+          <option value="ambient">gerada no navegador</option>
+          {#each tracks as t (t.id)}<option value={String(t.id)}>🎶 {t.title}</option>{/each}
+        </select>
+      </label>
+    {/if}
     <label class="volume">
       trilha
       <input type="range" min="0" max="1" step="0.05" bind:value={musicVolume} />

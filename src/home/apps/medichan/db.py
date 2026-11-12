@@ -1,7 +1,7 @@
 import json
 import sqlite3
 
-from home.apps.medichan.models import Meditation, Script, SegmentOut
+from home.apps.medichan.models import Meditation, Script, SegmentOut, Track
 from home.apps.medichan.tts import Synthesis
 from home.core import db as core_db
 
@@ -14,6 +14,20 @@ CREATE TABLE IF NOT EXISTS medichan_meditations (
     title      TEXT NOT NULL,
     segments   TEXT NOT NULL,  -- JSON: [{kind, text, seconds, file}]
     folder     TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+
+-- Músicas ambientes (Lyria): geradas em segundo plano; MP3 em data/medichan/music/<id>.mp3
+CREATE TABLE IF NOT EXISTS medichan_tracks (
+    id         INTEGER PRIMARY KEY,
+    title      TEXT NOT NULL,
+    kind       TEXT NOT NULL,              -- clip | pro
+    preset     TEXT,
+    prompt     TEXT NOT NULL,
+    status     TEXT NOT NULL DEFAULT 'pending',  -- pending | ready | error
+    error      TEXT,
+    seconds    REAL,
+    cost_usd   REAL,
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 """
@@ -117,3 +131,66 @@ def delete(conn: sqlite3.Connection, id: int) -> str | None:
     with conn:
         conn.execute("DELETE FROM medichan_meditations WHERE id = ?", (id,))
     return row["folder"]
+
+
+# --- músicas ---
+
+
+def track_audio_url(id: int) -> str:
+    return f"/api/medichan/music/{id}/audio"
+
+
+def _to_track(row: sqlite3.Row) -> Track:
+    data = dict(row)
+    return Track(**data, audio=track_audio_url(row["id"]) if row["status"] == "ready" else None)
+
+
+def create_track(
+    conn: sqlite3.Connection, title: str, kind: str, preset: str | None, prompt: str
+) -> Track:
+    with conn:
+        cur = conn.execute(
+            "INSERT INTO medichan_tracks (title, kind, preset, prompt) VALUES (?, ?, ?, ?)",
+            (title, kind, preset, prompt),
+        )
+    return get_track(conn, cur.lastrowid)  # type: ignore[arg-type, return-value]
+
+
+def finish_track(
+    conn: sqlite3.Connection,
+    id: int,
+    *,
+    seconds: float | None = None,
+    cost_usd: float | None = None,
+    error: str | None = None,
+) -> None:
+    with conn:
+        conn.execute(
+            "UPDATE medichan_tracks SET status = ?, seconds = ?, cost_usd = ?, error = ?"
+            " WHERE id = ?",
+            ("error" if error else "ready", seconds, cost_usd, error, id),
+        )
+
+
+def get_track(conn: sqlite3.Connection, id: int) -> Track | None:
+    row = conn.execute("SELECT * FROM medichan_tracks WHERE id = ?", (id,)).fetchone()
+    return _to_track(row) if row else None
+
+
+STALE_MINUTES = 10  # pending mais velho que isso: o servidor caiu no meio da composição
+
+
+def list_tracks(conn: sqlite3.Connection) -> list[Track]:
+    with conn:
+        conn.execute(
+            "UPDATE medichan_tracks SET status = 'error', error = 'interrompida (servidor reiniciou)'"
+            " WHERE status = 'pending' AND created_at < strftime('%Y-%m-%dT%H:%M:%SZ', 'now', ?)",
+            (f"-{STALE_MINUTES} minutes",),
+        )
+    rows = conn.execute("SELECT * FROM medichan_tracks ORDER BY id DESC")
+    return [_to_track(r) for r in rows.fetchall()]
+
+
+def delete_track(conn: sqlite3.Connection, id: int) -> bool:
+    with conn:
+        return conn.execute("DELETE FROM medichan_tracks WHERE id = ?", (id,)).rowcount > 0
