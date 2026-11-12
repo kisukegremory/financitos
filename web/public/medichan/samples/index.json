@@ -1,0 +1,16 @@
+[
+  {
+    "slug": "ansiedade-antes-de-uma-decisao-elevenlabs",
+    "title": "Raízes na Incerteza",
+    "feeling": "ansiedade antes de uma decisão importante",
+    "voice": "elevenlabs",
+    "cost_usd": 0.11464
+  },
+  {
+    "slug": "ansiedade-antes-de-uma-decisao-gemini",
+    "title": "Raízes na Incerteza",
+    "feeling": "ansiedade antes de uma decisão importante",
+    "voice": "gemini",
+    "cost_usd": 0.03145
+  }
+]

@@ -1,0 +1,136 @@
+{
+  "slug": "ansiedade-antes-de-uma-decisao-elevenlabs",
+  "feeling": "ansiedade antes de uma decisão importante",
+  "voice": "elevenlabs",
+  "title": "Raízes na Incerteza",
+  "segments": [
+    {
+      "kind": "speech",
+      "text": "Você trouxe essa inquietação que precede escolhas... aquele frio na barriga que sussurra 'e se'. É um lugar desconfortável, mas sagrado... onde o futuro ainda não cristalizou.",
+      "seconds": null,
+      "audio": "/medichan/samples/ansiedade-antes-de-uma-decisao-elevenlabs/00.mp3"
+    },
+    {
+      "kind": "speech",
+      "text": "Vamos respirar juntos nesse espaço antes da curva... percorrer o caminho interno antes do passo externo.",
+      "seconds": null,
+      "audio": "/medichan/samples/ansiedade-antes-de-uma-decisao-elevenlabs/01.mp3"
+    },
+    {
+      "kind": "pause",
+      "text": null,
+      "seconds": 4,
+      "audio": null
+    },
+    {
+      "kind": "speech",
+      "text": "Inspire profundamente... enchendo os pulmões desse ar que também não sabe para onde vai...",
+      "seconds": null,
+      "audio": "/medichan/samples/ansiedade-antes-de-uma-decisao-elevenlabs/03.mp3"
+    },
+    {
+      "kind": "pause",
+      "text": null,
+      "seconds": 3,
+      "audio": null
+    },
+    {
+      "kind": "speech",
+      "text": "Segure... como a pausa entre duas notas musicais...",
+      "seconds": null,
+      "audio": "/medichan/samples/ansiedade-antes-de-uma-decisao-elevenlabs/05.mp3"
+    },
+    {
+      "kind": "pause",
+      "text": null,
+      "seconds": 2,
+      "audio": null
+    },
+    {
+      "kind": "speech",
+      "text": "Agora solte... deixando ir o que já não serve mais...",
+      "seconds": null,
+      "audio": "/medichan/samples/ansiedade-antes-de-uma-decisao-elevenlabs/07.mp3"
+    },
+    {
+      "kind": "pause",
+      "text": null,
+      "seconds": 5,
+      "audio": null
+    },
+    {
+      "kind": "speech",
+      "text": "Imagine-se parado à beira de um rio... a água é turva e você não vê o fundo. As pedras do caminho estão submersas, invisíveis... mas existem.",
+      "seconds": null,
+      "audio": "/medichan/samples/ansiedade-antes-de-uma-decisao-elevenlabs/09.mp3"
+    },
+    {
+      "kind": "speech",
+      "text": "Quais marcas na sua pele mostram que você já atravessou águas assim antes... que já pisou em fé quando não enxergava o chão?",
+      "seconds": null,
+      "audio": "/medichan/samples/ansiedade-antes-de-uma-decisao-elevenlabs/10.mp3"
+    },
+    {
+      "kind": "pause",
+      "text": null,
+      "seconds": 20,
+      "audio": null
+    },
+    {
+      "kind": "speech",
+      "text": "A ansiedade é como o vento antes da tempestade... ele não é a tempestade. Apenas anuncia que algo está se movendo... transformando.",
+      "seconds": null,
+      "audio": "/medichan/samples/ansiedade-antes-de-uma-decisao-elevenlabs/12.mp3"
+    },
+    {
+      "kind": "speech",
+      "text": "Que parte de você já sabe, no silêncio entre um pensamento e outro, qual é o próximo movimento necessário?",
+      "seconds": null,
+      "audio": "/medichan/samples/ansiedade-antes-de-uma-decisao-elevenlabs/13.mp3"
+    },
+    {
+      "kind": "pause",
+      "text": null,
+      "seconds": 25,
+      "audio": null
+    },
+    {
+      "kind": "speech",
+      "text": "Entre duas possibilidades há um território estranho... onde não somos mais o que fomos, mas ainda não somos o que seremos.",
+      "seconds": null,
+      "audio": "/medichan/samples/ansiedade-antes-de-uma-decisao-elevenlabs/15.mp3"
+    },
+    {
+      "kind": "speech",
+      "text": "Que pequeno gesto - um suspiro, um alongamento, um olhar para o céu - poderia ancorar você nesse limbo criativo?",
+      "seconds": null,
+      "audio": "/medichan/samples/ansiedade-antes-de-uma-decisao-elevenlabs/16.mp3"
+    },
+    {
+      "kind": "pause",
+      "text": null,
+      "seconds": 30,
+      "audio": null
+    },
+    {
+      "kind": "speech",
+      "text": "Traga a atenção para os pés no chão... para as costas apoiadas... para o ar entrando e saindo sem esforço.",
+      "seconds": null,
+      "audio": "/medichan/samples/ansiedade-antes-de-uma-decisao-elevenlabs/18.mp3"
+    },
+    {
+      "kind": "speech",
+      "text": "Hoje, enquanto o mundo continuar girando... do que você precisa se lembrar sobre sua própria capacidade de atravessar?",
+      "seconds": null,
+      "audio": "/medichan/samples/ansiedade-antes-de-uma-decisao-elevenlabs/19.mp3"
+    },
+    {
+      "kind": "pause",
+      "text": null,
+      "seconds": 15,
+      "audio": null
+    }
+  ],
+  "chars": 1433,
+  "cost_usd": 0.11464
+}
