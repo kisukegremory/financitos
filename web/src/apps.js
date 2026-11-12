@@ -2,4 +2,5 @@
 export const apps = [
   { path: '/financitos', icon: '💸', name: 'financitos', description: 'Faturas, caixinhas e pagamentos' },
   { path: '/tarot', icon: '🔮', name: 'tarot', description: 'Frases que marcam e cartas do dia' },
+  { path: '/medichan', icon: '🪷', name: 'medichan', description: 'Meditações em áudio sobre o que você sente' },
 ]

@@ -1,9 +1,12 @@
 const TOKEN_KEY = 'home:token'
 
-export async function request(method, path, body) {
-  const headers = { 'Content-Type': 'application/json' }
+export function authHeaders() {
   const token = localStorage.getItem(TOKEN_KEY)
-  if (token) headers.Authorization = `Bearer ${token}`
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+export async function request(method, path, body) {
+  const headers = { 'Content-Type': 'application/json', ...authHeaders() }
 
   const res = await fetch(`/api${path}`, {
     method,

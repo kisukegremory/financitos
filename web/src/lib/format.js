@@ -2,6 +2,13 @@ const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' 
 
 export const money = (v) => brl.format(Number(v))
 
+const usdFmt = new Intl.NumberFormat('pt-BR', {
+  style: 'currency', currency: 'USD', minimumFractionDigits: 3, maximumFractionDigits: 3,
+})
+
+// custos de API em dólar, com 3 casas: 0.0312 -> 'US$ 0,031'
+export const usd = (v) => (v == null ? '—' : usdFmt.format(Number(v)))
+
 // '2026-09-15' -> '15/09/2026' (sem passar por Date, evitando fuso)
 export const dateBR = (iso) => iso.split('-').reverse().join('/')
 
