@@ -241,18 +241,19 @@
 <style>
   .player { display: flex; flex-direction: column; gap: 0.75rem; }
   .top { display: flex; justify-content: space-between; align-items: center; }
-  h2 { margin: 0.5rem 0 0; text-align: center; font-weight: 500; }
+  h2 { margin: 1rem 0 0 !important; text-align: center; font-size: clamp(1.8rem, 5vw, 2.6rem) !important; }
   .feeling { text-align: center; margin: 0; font-style: italic; }
   .small { font-size: 0.8rem; }
 
   .stage {
     position: relative; display: grid; place-items: center;
-    min-height: 340px; overflow: hidden;
+    min-height: min(52vh, 440px); overflow: hidden;
   }
   .breath {
-    position: absolute; width: 220px; height: 220px; border-radius: 50%;
-    background: radial-gradient(circle, color-mix(in srgb, var(--accent) 35%, transparent), transparent 70%);
-    border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+    position: absolute; width: min(260px, 62vw); aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle, rgba(232, 207, 154, 0.32), rgba(169, 196, 176, 0.08) 55%, transparent 72%);
+    border: 1px solid rgba(232, 207, 154, 0.28);
+    box-shadow: 0 0 80px rgba(232, 207, 154, 0.18), inset 0 0 40px rgba(232, 207, 154, 0.12);
     transform: scale(0.7);
     animation: breathe 10s ease-in-out infinite; /* inspira 4s, solta 6s */
     animation-play-state: paused;
@@ -264,10 +265,15 @@
     100% { transform: scale(0.7); opacity: 0.6; }
   }
   .caption { position: relative; max-width: 560px; text-align: center; padding: 0 1rem; }
-  .spoken { font-size: 1.25rem; line-height: 1.6; margin: 0; animation: fade 1.2s ease; }
+  .spoken {
+    font-family: var(--serif); font-size: clamp(1.35rem, 3.6vw, 1.75rem); line-height: 1.5; margin: 0;
+    animation: fade 1.8s ease; text-shadow: 0 2px 20px rgba(0, 0, 0, 0.6);
+  }
   .spoken.faded { opacity: 0.35; }
   @keyframes fade { from { opacity: 0; } }
 
+  .player { background: transparent !important; border: 0 !important; box-shadow: none !important; backdrop-filter: none !important; padding: 1rem 0 !important; }
+  .controls > button:not(.ghost) { padding: 0.8rem 2rem; font-size: 1.05rem; }
   .progress { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
   .progress div { height: 100%; background: var(--accent); transition: width 0.25s linear; }
   .controls { justify-content: center; }
@@ -276,7 +282,7 @@
   .volume input { padding: 0; }
   button.small { align-self: center; font-size: 0.8rem; }
 
-  .script { color: var(--muted); line-height: 1.6; font-size: 0.9rem; }
+  .script { background: var(--panel); border-radius: 18px; padding: 1rem 1rem 1rem 2.2rem; backdrop-filter: blur(14px); color: var(--muted); line-height: 1.6; font-size: 0.9rem; }
   .script li.pause { font-style: italic; opacity: 0.6; list-style: none; }
   .script li.now { color: var(--accent); }
   .error { color: var(--danger); }

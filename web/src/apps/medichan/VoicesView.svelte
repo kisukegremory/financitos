@@ -83,4 +83,21 @@
   .pace.rápido { color: #e8b04b; border-color: #e8b04b; }
   .error { color: var(--danger); }
   td { vertical-align: middle; }
+  .play { height: 2.2rem; padding: 0 !important; }
+  td strong { font-family: var(--serif); font-size: 1.15rem; font-weight: 500; }
+  @media (max-width: 720px) {
+    thead { display: none; }
+    table, tbody { display: block; }
+    tr {
+      display: grid; grid-template-columns: auto 1fr auto; gap: 0.15rem 0.75rem; align-items: center;
+      padding: 0.75rem 0; border-bottom: 1px solid var(--border);
+    }
+    td { border: 0; padding: 0; }
+    td:nth-child(1) { grid-row: span 3; }
+    td:nth-child(2) { grid-column: 2; color: var(--muted); font-size: 0.78rem; order: -1; }
+    td:nth-child(3) { grid-column: 2; }
+    td:nth-child(4) { grid-column: 2; }
+    td:nth-child(5) { grid-column: 3; grid-row: 1; }
+    td:nth-child(6) { grid-column: 3; grid-row: 2 / span 2; }
+  }
 </style>

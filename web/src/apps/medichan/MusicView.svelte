@@ -179,28 +179,31 @@
 <style>
   .small { font-size: 0.8rem; }
   .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.75rem 0; }
-  .chip { font-size: 0.85rem; padding: 0.3rem 0.8rem; border-radius: 999px; }
-  .chip.active { border-color: var(--accent); color: var(--accent); }
+  .chip { font-size: 0.85rem; padding: 0.35rem 0.9rem !important; border-radius: 999px; }
+  .chip.active { border-color: var(--accent) !important; color: var(--accent) !important; background: rgba(232, 207, 154, 0.12) !important; }
   label input { width: 100%; box-sizing: border-box; }
   .options { margin: 0.75rem 0; align-items: stretch; }
   .grow { flex: 1; min-width: 180px; }
   .length {
+    background: rgba(10, 10, 26, 0.3);
     flex-direction: row; align-items: center; gap: 0.5rem; cursor: pointer;
-    border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.7rem;
+    border: 1px solid var(--border); border-radius: 14px; padding: 0.5rem 0.8rem;
   }
   .length.active { border-color: var(--accent); }
   .length input { width: auto; }
   .length strong { color: var(--text); font-weight: 500; }
-  .go { width: 100%; }
+  .go { width: 100%; padding: 0.9rem !important; }
   .error { color: var(--danger); }
 
   .list { display: grid; gap: 0.5rem; }
   .track {
     display: flex; align-items: center; gap: 0.75rem;
-    border: 1px solid var(--border); border-radius: 10px; padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border); border-radius: 16px; padding: 0.6rem 0.75rem;
+    background: rgba(10, 10, 26, 0.3);
   }
   .track.playing { border-color: var(--accent); }
-  .play { width: 2.4rem; text-align: center; padding: 0.35rem; }
+  .play { width: 2.6rem; height: 2.6rem; text-align: center; padding: 0 !important; flex: none; }
+  .info strong { font-family: var(--serif); font-size: 1.15rem; font-weight: 500; }
   .spinner { display: inline-block; animation: spin 2s linear infinite; color: var(--accent); }
   @keyframes spin { to { transform: rotate(360deg); } }
   .info { flex: 1; display: flex; flex-direction: column; gap: 0.15rem; }

@@ -39,6 +39,7 @@
 
 <section>
   <h2>Como você está se sentindo agora?</h2>
+  <p class="muted lead">Sem pressa. Escreva como vier, mesmo que sejam só algumas palavras.</p>
   <textarea
     rows="4"
     placeholder="Escreva com suas palavras o que está sentindo ou pensando..."
@@ -80,20 +81,24 @@
     </p>
   {/if}
 
-  <button class="go" disabled={!feeling.trim() || loading || !voice} onclick={create}>
-    {loading ? 'escrevendo e dando voz… (~30 s)' : '🪷 criar meditação'}
+  <button class="go" class:loading disabled={!feeling.trim() || loading || !voice} onclick={create}>
+    {loading ? 'escrevendo e dando voz… (~30 s)' : '✿ criar minha meditação'}
   </button>
   {#if error}<p class="error">{error}</p>{/if}
 </section>
 
 <style>
   .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
-  .chip { font-size: 0.8rem; padding: 0.25rem 0.7rem; border-radius: 999px; }
+  .chip { font-size: 0.85rem; padding: 0.35rem 0.9rem !important; border-radius: 999px; }
+  .chip:hover { color: var(--accent) !important; }
   .row { align-items: flex-end; }
-  .voice { flex: 1; }
+  .voice { flex: 1; min-width: 0; }
+  .voice select { width: 100%; max-width: 100%; text-overflow: ellipsis; }
   .info { font-size: 0.82rem; margin: 0.5rem 0 1rem; }
   .info strong { color: var(--text); font-weight: 500; }
-  .go { width: 100%; }
+  .go { width: 100%; padding: 0.9rem !important; font-size: 1.05rem; }
+  .lead { margin: 0 0 0.25rem; }
+  .loading { animation: pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.55; } }
   .error { color: var(--danger); }
-  textarea { font-family: inherit; font-size: 1rem; }
 </style>
