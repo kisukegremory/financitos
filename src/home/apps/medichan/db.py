@@ -4,6 +4,7 @@ import sqlite3
 from home.apps.medichan.models import (
     AudioFiles,
     Meditation,
+    Profile,
     PublishedRow,
     Script,
     SegmentOut,
@@ -49,6 +50,14 @@ CREATE TABLE IF NOT EXISTS medichan_published (
     access        TEXT NOT NULL DEFAULT 'free',  -- free | private
     duration_s    REAL NOT NULL,
     published_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+
+-- Perfil "sobre mim": uma linha só (id = 1)
+CREATE TABLE IF NOT EXISTS medichan_profile (
+    id         INTEGER PRIMARY KEY CHECK (id = 1),
+    about      TEXT NOT NULL DEFAULT '',
+    max_hold   INTEGER NOT NULL DEFAULT 3,
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 """
 
@@ -281,3 +290,22 @@ def list_published(conn: sqlite3.Connection) -> list[PublishedRow]:
 def delete_published(conn: sqlite3.Connection, slug: str) -> bool:
     with conn:
         return conn.execute("DELETE FROM medichan_published WHERE slug = ?", (slug,)).rowcount > 0
+
+
+# --- perfil ---
+
+
+def get_profile(conn: sqlite3.Connection) -> Profile:
+    row = conn.execute("SELECT about, max_hold FROM medichan_profile WHERE id = 1").fetchone()
+    return Profile(about=row["about"], max_hold=row["max_hold"]) if row else Profile()
+
+
+def save_profile(conn: sqlite3.Connection, profile: Profile) -> Profile:
+    with conn:
+        conn.execute(
+            "INSERT INTO medichan_profile (id, about, max_hold) VALUES (1, ?, ?)"
+            " ON CONFLICT(id) DO UPDATE SET about = excluded.about, max_hold = excluded.max_hold,"
+            " updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')",
+            (profile.about, profile.max_hold),
+        )
+    return get_profile(conn)

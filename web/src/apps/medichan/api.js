@@ -14,6 +14,8 @@ export const api = {
   publish: (id, body) => request('POST', `/meditations/${id}/publish`, body),
   published: () => request('GET', '/published'),
   unpublish: (slug) => request('DELETE', `/published/${slug}`),
+  profile: () => request('GET', '/profile'),
+  saveProfile: (body) => request('PUT', '/profile', body),
 }
 
 // exemplos estáticos em web/public/medichan/samples (gerados por `home medichan sample`)

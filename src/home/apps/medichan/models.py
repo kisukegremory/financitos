@@ -8,9 +8,11 @@ MIN_PAUSE, MAX_PAUSE = 2, 60  # segundos de silêncio aceitos por pausa
 class Segment(BaseModel):
     """Um trecho do roteiro: fala (vira áudio) ou pausa (só tempo no player)."""
 
-    kind: Literal["speech", "pause"]
+    kind: Literal["speech", "pause", "breath"]
     text: str | None = None
     seconds: int | None = None
+    technique: str | None = None  # só em breath: id de breath.TECHNIQUES
+    cycles: int | None = None
 
 
 class Script(BaseModel):
@@ -28,12 +30,21 @@ class Script(BaseModel):
                 text = (s.text or "").strip()
                 if text:
                     out.append(Segment(kind="speech", text=text))
+            elif s.kind == "breath":
+                out.append(Segment(kind="breath", technique=s.technique, cycles=s.cycles))
             else:
                 seconds = min(max(s.seconds or MIN_PAUSE, MIN_PAUSE), MAX_PAUSE)
                 out.append(Segment(kind="pause", seconds=seconds))
         if not any(s.kind == "speech" for s in out):
             raise ValueError("roteiro sem nenhuma fala")
         return out
+
+
+class Profile(BaseModel):
+    """Contexto pessoal que personaliza os roteiros."""
+
+    about: str = Field(default="", max_length=6000)
+    max_hold: int = Field(default=3, ge=0, le=10)  # retenção máxima de ar, em segundos
 
 
 class MeditationIn(BaseModel):

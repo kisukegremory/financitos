@@ -2,6 +2,7 @@
   import { dateBR, usd } from '../../lib/format.js'
   import { link } from '../../lib/router.svelte.js'
   import { api, samples } from './api.js'
+  import AboutView from './AboutView.svelte'
   import CreateView from './CreateView.svelte'
   import Listen from './listen/Listen.svelte'
   import MusicView from './MusicView.svelte'
@@ -71,6 +72,7 @@
     { id: 'mine', icon: '◌', label: 'Minhas' },
     { id: 'music', icon: '♫', label: 'Sons' },
     { id: 'voices', icon: '◠', label: 'Vozes' },
+    { id: 'about', icon: '♡', label: 'Sobre mim' },
   ]
   const ART = { create: 'create', music: 'music' }
   let art = $derived(playing ? 'player' : (ART[tab] ?? 'hero'))
@@ -83,6 +85,7 @@
     mine: 'O que você já criou.',
     music: 'Paisagens sonoras para acompanhar.',
     voices: 'Encontre a voz que te acalma.',
+    about: 'Conte um pouco de você.',
   }
 
   let spent = $derived(mine.reduce((sum, m) => sum + (m.cost_usd ?? 0), 0))
@@ -144,6 +147,8 @@
       <CreateView {voices} bind:voice onready={ready} />
     {:else if tab === 'music'}
       <MusicView bind:tracks />
+    {:else if tab === 'about'}
+      <AboutView />
     {:else if tab === 'voices'}
       <VoicesView {voices} onpick={(id) => ((voice = id), go('create'))} />
     {:else}
@@ -300,7 +305,7 @@
       background: rgba(20, 20, 42, 0.78); backdrop-filter: blur(18px);
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
     }
-    .tabs button { flex-direction: column; gap: 0.15rem; padding: 0.45rem 0.4rem; flex: 1; border-radius: 20px; font-size: 0.72rem; }
+    .tabs button { flex-direction: column; gap: 0.15rem; padding: 0.45rem 0.4rem; flex: 1; min-width: 0; border-radius: 20px; font-size: 0.68rem; white-space: nowrap; }
     .tabs .icon { font-size: 1.25rem; }
     .intro { padding: 1.75rem 1rem 1rem; }
     main { padding: 0 0.85rem 1.5rem; }

@@ -14,6 +14,7 @@ from home.apps.medichan.models import (
     MeditationIn,
     MusicCatalog,
     MusicOption,
+    Profile,
     PublishedRow,
     PublishIn,
     Track,
@@ -86,7 +87,7 @@ def create_meditation(
     if req.voice not in tts.VOICES:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"voz desconhecida: {req.voice}")
     feeling = req.feeling.strip()
-    script = writer.write(feeling)
+    script = writer.write(feeling, db.get_profile(conn))
     folder = uuid.uuid4().hex
     try:
         synthesis = speaker.synthesize(script, req.voice, root / folder)
@@ -94,6 +95,16 @@ def create_meditation(
         shutil.rmtree(root / folder, ignore_errors=True)
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"falha ao gerar a voz: {e}") from e
     return db.create(conn, feeling, req.voice, script, synthesis, folder)
+
+
+@router.get("/profile")
+def get_profile(conn: Conn) -> Profile:
+    return db.get_profile(conn)
+
+
+@router.put("/profile")
+def save_profile(profile: Profile, conn: Conn) -> Profile:
+    return db.save_profile(conn, profile)
 
 
 @router.get("/meditations")

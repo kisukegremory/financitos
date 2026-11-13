@@ -3,6 +3,7 @@
   import { usd } from '../../lib/format.js'
   import { createAmbient, createTrackBed, seedFrom } from './ambient.js'
   import { loadAudio } from './api.js'
+  import { createMediaSession } from './media-session.js'
 
   let { meditation, voiceName, tracks = [], onclose } = $props()
 
@@ -36,6 +37,7 @@
   let musicGain = null
   let t0 = 0
   let raf = 0
+  let media = null // botões do fone
 
   let speechCount = $derived(meditation.segments.filter((s) => s.audio).length)
 
@@ -121,7 +123,18 @@
       duck.gain.setTargetAtTime(1, t0 + item.end + 0.4, 1.5)
     }
     status = 'playing'
+    mediaControls().playing()
     tick()
+  }
+
+  function mediaControls() {
+    media ??= createMediaSession({
+      title: meditation.title,
+      artwork: '/medichan/art/player.webp',
+      onplay: () => status === 'paused' ? toggle() : (status === 'ready' || status === 'ended') && start(),
+      onpause: () => status === 'playing' && toggle(),
+    })
+    return media
   }
 
   function tick() {
@@ -135,6 +148,7 @@
     ctx?.close()
     ctx = null
     status = 'ended'
+    media?.paused()
   }
 
   async function toggle() {
@@ -142,9 +156,11 @@
     if (status === 'playing') {
       await ctx.suspend() // congela voz, trilha e relógio juntos
       status = 'paused'
+      media?.paused()
     } else if (status === 'paused') {
       await ctx.resume()
       status = 'playing'
+      media?.playing()
     }
   }
 
@@ -153,6 +169,7 @@
   })
 
   onDestroy(() => {
+    media?.destroy()
     cancelAnimationFrame(raf)
     ctx?.close()
   })

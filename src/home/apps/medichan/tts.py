@@ -498,14 +498,20 @@ class Speaker:
             (dest / name).write_bytes(spoken.audio)
             return name, spoken
 
+        # textos repetidos (deixas da respiração) viram um arquivo só, cobrado uma vez
+        first: dict[str, int] = {}
+        for i, s in enumerate(script.segments):
+            if s.kind == "speech" and s.text:
+                first.setdefault(s.text, i)
         with ThreadPoolExecutor(max_workers=4) as pool:
-            jobs = {
-                i: pool.submit(one, i, s.text)
-                for i, s in enumerate(script.segments)
-                if s.kind == "speech" and s.text
-            }
-            done = {i: job.result() for i, job in jobs.items()}
-        spoken = [s for _, s in done.values()]
+            jobs = {i: pool.submit(one, i, text) for text, i in first.items()}
+            unique = {i: job.result() for i, job in jobs.items()}
+        done = {
+            i: unique[first[s.text]]
+            for i, s in enumerate(script.segments)
+            if s.kind == "speech" and s.text
+        }
+        spoken = [s for _, s in unique.values()]
         chars = sum(s.chars for s in spoken)
         # custo real quando o provedor informa (chat); senão, calculado pela tabela de preços
         cost = sum(
