@@ -4,15 +4,18 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.security import HTTPAuthorizationCredentials
 
-from home.apps.medichan import db, music, tts
+from home.apps.medichan import db, music, publish, tts
 from home.apps.medichan.llm import ScriptWriter
 from home.apps.medichan.models import (
     Meditation,
     MeditationIn,
     MusicCatalog,
     MusicOption,
+    PublishedRow,
+    PublishIn,
     Track,
     TrackIn,
     VoiceInfo,
@@ -21,11 +24,18 @@ from home.apps.medichan.music import Composer
 from home.apps.medichan.tts import Speaker
 from home.core import db as core_db
 from home.core.config import Settings, get_settings
-from home.core.deps import Conn
+from home.core.deps import Conn, bearer, require_token
 
 router = APIRouter(tags=["medichan"])
+# consumo: só o que foi publicado; montado sem token (itens privados checam por conta própria)
+public = APIRouter(tags=["medichan-public"])
 
-MEDIA_TYPES = {".mp3": "audio/mpeg", ".wav": "audio/wav"}
+MEDIA_TYPES = {
+    ".mp3": "audio/mpeg",
+    ".wav": "audio/wav",
+    ".ogg": "audio/ogg",
+    ".m4a": "audio/mp4",
+}
 
 
 def get_writer(settings: Annotated[Settings, Depends(get_settings)]) -> ScriptWriter:
@@ -46,6 +56,13 @@ def audio_root(settings: Annotated[Settings, Depends(get_settings)]) -> Path:
 
 
 AudioRoot = Annotated[Path, Depends(audio_root)]
+
+
+def get_storage(root: AudioRoot) -> publish.Storage:
+    return publish.LocalStorage(root / "public")
+
+
+Store = Annotated[publish.Storage, Depends(get_storage)]
 
 
 def _not_found(id: int) -> HTTPException:
@@ -193,3 +210,64 @@ def delete_track(id: int, conn: Conn, root: AudioRoot) -> None:
     if not db.delete_track(conn, id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"música {id} não encontrada")
     (root / "music" / f"{id}.mp3").unlink(missing_ok=True)
+
+
+# --- publicação (estúdio) ---
+
+
+@router.post("/meditations/{id}/publish", status_code=status.HTTP_201_CREATED)
+def publish_meditation(
+    id: int, req: PublishIn, conn: Conn, root: AudioRoot, storage: Store
+) -> PublishedRow:
+    """Renderiza o áudio final (voz + pausas + trilha) e põe no catálogo; mesmo slug republica."""
+    try:
+        return publish.publish(conn, root, storage, id, req)
+    except LookupError as e:
+        raise _not_found(id) from e
+    except publish.PublishError as e:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(e)) from e
+    except RuntimeError as e:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"falha ao renderizar: {e}") from e
+
+
+@router.get("/published")
+def list_published(conn: Conn) -> list[PublishedRow]:
+    return db.list_published(conn)
+
+
+@router.delete("/published/{slug}", status_code=status.HTTP_204_NO_CONTENT)
+def unpublish(slug: str, conn: Conn, storage: Store) -> None:
+    if not publish.unpublish(conn, storage, slug):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"publicação {slug} não encontrada")
+
+
+# --- consumo (o que um app/site externo também leria) ---
+
+
+@public.get("/catalog.json", response_model=None)
+def public_catalog(root: AudioRoot) -> FileResponse | JSONResponse:
+    path = root / "public" / publish.CATALOG
+    if not path.is_file():
+        return JSONResponse({"schema_version": 1, "updated_at": None, "items": []})
+    return FileResponse(path, media_type="application/json")
+
+
+@public.get("/{slug}/{name}")
+def public_audio(
+    slug: str,
+    name: str,
+    conn: Conn,
+    root: AudioRoot,
+    settings: Annotated[Settings, Depends(get_settings)],
+    creds: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
+) -> FileResponse:
+    """Serve o áudio final (com Range, para avançar/retomar). Privado exige o token do hub."""
+    item = db.get_published(conn, slug)
+    if item is None or name not in ("audio.ogg", "audio.m4a"):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "áudio não encontrado")
+    if item.access == "private":
+        require_token(settings, creds)
+    path = root / "public" / slug / name
+    if not path.is_file():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "áudio não encontrado")
+    return FileResponse(path, media_type=MEDIA_TYPES[path.suffix])

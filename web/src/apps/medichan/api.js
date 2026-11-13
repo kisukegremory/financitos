@@ -11,6 +11,9 @@ export const api = {
   tracks: () => request('GET', '/music'),
   compose: (body) => request('POST', '/music', body),
   removeTrack: (id) => request('DELETE', `/music/${id}`),
+  publish: (id, body) => request('POST', `/meditations/${id}/publish`, body),
+  published: () => request('GET', '/published'),
+  unpublish: (slug) => request('DELETE', `/published/${slug}`),
 }
 
 // exemplos estáticos em web/public/medichan/samples (gerados por `home medichan sample`)
@@ -27,6 +30,6 @@ export async function loadAudio(url) {
 }
 
 // URL tocável num <audio> (a rota pode exigir token, então vira blob local)
-export async function audioURL(url) {
-  return URL.createObjectURL(new Blob([await loadAudio(url)], { type: 'audio/mpeg' }))
+export async function audioURL(url, type = 'audio/mpeg') {
+  return URL.createObjectURL(new Blob([await loadAudio(url)], { type }))
 }

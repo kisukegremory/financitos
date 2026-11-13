@@ -99,3 +99,49 @@ class MusicCatalog(BaseModel):
     presets: list[MusicOption]
     lengths: list[MusicOption]
     prices: dict[str, float]
+
+
+# --- publicação (contrato com o app de consumo; ver docs/medichan-catalog.md) ---
+
+Access = Literal["free", "private"]
+SLUG = r"^[a-z0-9]+(-[a-z0-9]+)*$"
+
+
+class PublishIn(BaseModel):
+    slug: str | None = Field(default=None, max_length=60, pattern=SLUG)  # padrão: do título
+    title: str | None = Field(default=None, max_length=120)  # padrão: o da meditação
+    summary: str = Field(default="", max_length=300)
+    tags: list[str] = Field(default_factory=list, max_length=8)
+    access: Access = "free"
+    track_id: int | None = None  # música Lyria por baixo da voz; None = só voz
+
+
+class AudioFiles(BaseModel):
+    """Caminhos relativos ao catalog.json (funciona igual em disco local, CDN ou bucket)."""
+
+    ogg: str
+    m4a: str
+
+
+class PublishedItem(BaseModel):
+    slug: str
+    title: str
+    summary: str
+    tags: list[str]
+    access: Access
+    duration_s: float
+    audio: AudioFiles
+    published_at: str
+
+
+class Catalog(BaseModel):
+    schema_version: int = 1
+    updated_at: str
+    items: list[PublishedItem]
+
+
+class PublishedRow(PublishedItem):
+    """Visão do estúdio: inclui a origem (não vai para o catálogo público)."""
+
+    meditation_id: int | None
+    track_id: int | None

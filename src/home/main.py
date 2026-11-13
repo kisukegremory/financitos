@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 from fastapi.responses import FileResponse
 
 from home.apps.financitos.api import router as financitos
+from home.apps.medichan.api import public as medichan_public
 from home.apps.medichan.api import router as medichan
 from home.apps.tarot.api import router as tarot
 from home.core.deps import require_token
@@ -17,6 +18,9 @@ mimetypes.add_type("audio/mpeg", ".mp3")
 mimetypes.add_type("audio/wav", ".wav")
 
 app = FastAPI(title="home", version="0.1.0")
+
+# consumo do medichan: aberto (antes dos routers com token); itens privados checam o token
+app.include_router(medichan_public, prefix="/api/medichan/public")
 
 # cada app expõe um APIRouter, montado em /api/<app> atrás do mesmo token
 APPS: dict[str, APIRouter] = {"financitos": financitos, "tarot": tarot, "medichan": medichan}

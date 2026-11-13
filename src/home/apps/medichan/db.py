@@ -1,7 +1,14 @@
 import json
 import sqlite3
 
-from home.apps.medichan.models import Meditation, Script, SegmentOut, Track
+from home.apps.medichan.models import (
+    AudioFiles,
+    Meditation,
+    PublishedRow,
+    Script,
+    SegmentOut,
+    Track,
+)
 from home.apps.medichan.tts import Synthesis
 from home.core import db as core_db
 
@@ -29,6 +36,19 @@ CREATE TABLE IF NOT EXISTS medichan_tracks (
     seconds    REAL,
     cost_usd   REAL,
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+
+-- Publicadas: áudio final mixado em data/medichan/public/<slug>/ e listado no catalog.json
+CREATE TABLE IF NOT EXISTS medichan_published (
+    slug          TEXT PRIMARY KEY,
+    meditation_id INTEGER,  -- origem (pode ter sido apagada; o áudio final segue publicado)
+    track_id      INTEGER,
+    title         TEXT NOT NULL,
+    summary       TEXT NOT NULL DEFAULT '',
+    tags          TEXT NOT NULL DEFAULT '[]',  -- JSON
+    access        TEXT NOT NULL DEFAULT 'free',  -- free | private
+    duration_s    REAL NOT NULL,
+    published_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 """
 
@@ -123,6 +143,14 @@ def audio_file(conn: sqlite3.Connection, id: int, index: int) -> tuple[str, str]
     return row["folder"], segments[index]["file"]
 
 
+def source(conn: sqlite3.Connection, id: int) -> tuple[str, list[dict]] | None:
+    """(pasta, trechos crus com `file`) para renderizar a versão final."""
+    row = conn.execute(
+        "SELECT folder, segments FROM medichan_meditations WHERE id = ?", (id,)
+    ).fetchone()
+    return (row["folder"], json.loads(row["segments"])) if row else None
+
+
 def delete(conn: sqlite3.Connection, id: int) -> str | None:
     """Apaga e devolve a pasta dos áudios (para remover do disco)."""
     row = conn.execute("SELECT folder FROM medichan_meditations WHERE id = ?", (id,)).fetchone()
@@ -194,3 +222,62 @@ def list_tracks(conn: sqlite3.Connection) -> list[Track]:
 def delete_track(conn: sqlite3.Connection, id: int) -> bool:
     with conn:
         return conn.execute("DELETE FROM medichan_tracks WHERE id = ?", (id,)).rowcount > 0
+
+
+# --- publicadas ---
+
+
+def _to_published(row: sqlite3.Row) -> PublishedRow:
+    data = dict(row)
+    slug = data["slug"]
+    return PublishedRow(
+        **{**data, "tags": json.loads(data["tags"])},
+        audio=AudioFiles(ogg=f"{slug}/audio.ogg", m4a=f"{slug}/audio.m4a"),
+    )
+
+
+def save_published(
+    conn: sqlite3.Connection,
+    *,
+    slug: str,
+    meditation_id: int | None,
+    track_id: int | None,
+    title: str,
+    summary: str,
+    tags: list[str],
+    access: str,
+    duration_s: float,
+) -> PublishedRow:
+    """Cria ou republica (mesmo slug): a data vai para agora."""
+    with conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO medichan_published"
+            " (slug, meditation_id, track_id, title, summary, tags, access, duration_s)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                slug,
+                meditation_id,
+                track_id,
+                title,
+                summary,
+                json.dumps(tags, ensure_ascii=False),
+                access,
+                duration_s,
+            ),
+        )
+    return get_published(conn, slug)  # type: ignore[return-value]
+
+
+def get_published(conn: sqlite3.Connection, slug: str) -> PublishedRow | None:
+    row = conn.execute("SELECT * FROM medichan_published WHERE slug = ?", (slug,)).fetchone()
+    return _to_published(row) if row else None
+
+
+def list_published(conn: sqlite3.Connection) -> list[PublishedRow]:
+    rows = conn.execute("SELECT * FROM medichan_published ORDER BY published_at DESC, slug")
+    return [_to_published(r) for r in rows.fetchall()]
+
+
+def delete_published(conn: sqlite3.Connection, slug: str) -> bool:
+    with conn:
+        return conn.execute("DELETE FROM medichan_published WHERE slug = ?", (slug,)).rowcount > 0

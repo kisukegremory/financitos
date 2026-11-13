@@ -1,6 +1,4 @@
 import json
-import re
-import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Annotated
@@ -8,6 +6,7 @@ from typing import Annotated
 import typer
 
 from home.apps.medichan.llm import ScriptWriter
+from home.apps.medichan.publish import slugify
 from home.apps.medichan.tts import PREVIEW_TEXT, VOICES, Speaker
 from home.core.config import get_settings
 
@@ -15,12 +14,6 @@ app = typer.Typer(no_args_is_help=True, help="Meditações guiadas em áudio.")
 
 PUBLIC = Path("web/public/medichan")
 VoiceOpt = Annotated[list[str] | None, typer.Option("--voice", help="Id da voz (repetível)")]
-
-
-def slugify(text: str) -> str:
-    ascii_text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
-    slug = re.sub(r"[^a-z0-9]+", "-", ascii_text.lower()).strip("-")
-    return slug if len(slug) <= 40 else slug[:40].rsplit("-", 1)[0]
 
 
 def pick_voices(voices: list[str] | None) -> list[str]:
@@ -99,3 +92,35 @@ def voices(
     with ThreadPoolExecutor(max_workers=6) as pool:
         for line in pool.map(one, todo):
             typer.echo(line, err=True)
+
+
+@app.command("publish")
+def publish_cmd(
+    id: Annotated[int, typer.Argument(help="Id da meditação no estúdio")],
+    slug: Annotated[str | None, typer.Option(help="Slug público (padrão: do título)")] = None,
+    summary: Annotated[str, typer.Option(help="Resumo curto para a lista")] = "",
+    tag: Annotated[list[str] | None, typer.Option("--tag", help="Tag (repetível)")] = None,
+    private: Annotated[bool, typer.Option(help="Só para quem tem acesso")] = False,
+    track: Annotated[int | None, typer.Option(help="Id da música Lyria de fundo")] = None,
+) -> None:
+    """Renderiza o áudio final e coloca a meditação no catálogo público."""
+    from home.apps.medichan.api import get_storage
+    from home.apps.medichan.models import PublishIn
+    from home.apps.medichan.publish import publish
+    from home.core import db as core_db
+
+    settings = get_settings()
+    root = core_db.path_from_url(settings.database_url).parent / "medichan"
+    req = PublishIn(
+        slug=slug,
+        summary=summary,
+        tags=tag or [],
+        access="private" if private else "free",
+        track_id=track,
+    )
+    conn = core_db.connect(settings.database_url)
+    try:
+        item = publish(conn, root, get_storage(root), id, req)
+    finally:
+        conn.close()
+    typer.echo(f"ok: {item.slug} ({item.duration_s:.0f} s, {item.access})", err=True)
