@@ -29,6 +29,7 @@
   let elapsed = $state(0)
   let musicVolume = $state(0.7)
   let showScript = $state(false)
+  let showFeeling = $state(false)
 
   let buffers = [] // AudioBuffer por trecho (null nas pausas); vale para qualquer AudioContext
   let timeline = $state([]) // [{index, kind, text, start, end}]
@@ -195,7 +196,8 @@
   </div>
 
   <h2>{meditation.title}</h2>
-  <p class="muted feeling">“{meditation.feeling}”</p>
+  <button class="feeling" class:open={showFeeling} onclick={() => (showFeeling = !showFeeling)}
+    title={showFeeling ? 'recolher' : 'ver tudo'}>“{meditation.feeling}”</button>
 
   <div class="stage">
     <div class="breath" class:running={status === 'playing'}></div>
@@ -259,7 +261,12 @@
   .player { display: flex; flex-direction: column; gap: 0.75rem; }
   .top { display: flex; justify-content: space-between; align-items: center; }
   h2 { margin: 1rem 0 0 !important; text-align: center; font-size: clamp(1.8rem, 5vw, 2.6rem) !important; }
-  .feeling { text-align: center; margin: 0; font-style: italic; }
+  .feeling {
+    all: unset; cursor: pointer; display: -webkit-box; -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden;
+    max-width: 640px; margin: 0 auto; text-align: center; font-style: italic; color: var(--muted);
+  }
+  .feeling.open { display: block; }
   .small { font-size: 0.8rem; }
 
   .stage {

@@ -48,7 +48,7 @@ class Profile(BaseModel):
 
 
 class MeditationIn(BaseModel):
-    feeling: str = Field(min_length=1, max_length=1000)
+    feeling: str = Field(min_length=1, max_length=5000)
     voice: str = "gemini"  # id do catálogo em tts.VOICES
 
 

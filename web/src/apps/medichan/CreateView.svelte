@@ -42,11 +42,13 @@
   <p class="muted lead">Sem pressa. Escreva como vier, mesmo que sejam só algumas palavras.</p>
   <textarea
     rows="4"
+    maxlength="5000"
     placeholder="Escreva com suas palavras o que está sentindo ou pensando..."
     bind:value={feeling}
     disabled={loading}
     onkeydown={(e) => e.key === 'Enter' && (e.ctrlKey || e.metaKey) && feeling.trim() && create()}
   ></textarea>
+  {#if feeling.length > 3500}<p class="muted count">{feeling.length} / 5000</p>{/if}
   <div class="chips">
     {#each SUGGESTIONS as s (s)}
       <button class="ghost chip" disabled={loading} onclick={() => suggest(s)}>{s}</button>
@@ -97,6 +99,7 @@
   .info { font-size: 0.82rem; margin: 0.5rem 0 1rem; }
   .info strong { color: var(--text); font-weight: 500; }
   .go { width: 100%; padding: 0.9rem !important; font-size: 1.05rem; }
+  .count { text-align: right; font-size: 0.75rem; margin: -0.5rem 0 0.5rem; }
   .lead { margin: 0 0 0.25rem; }
   .loading { animation: pulse 2.4s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: 0.55; } }
